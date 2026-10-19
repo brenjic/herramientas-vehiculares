@@ -173,6 +173,39 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="admin.js"></script>
 
+    <!-- VENTANA MODAL PARA GESTIONAR CLIENTES -->
+    <div id="modalCliente" class="modal-overlay" aria-hidden="true">
+        <div class="modal-contenido" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+
+            <div class="modal-encabezado">
+                <div class="modal-icono" id="modalIcono">✏️</div>
+                <button type="button" id="modalCerrar" class="modal-cerrar" aria-label="Cerrar ventana">✕</button>
+            </div>
+
+            <h2 id="modalTitulo">Editar cliente</h2>
+            <p id="modalDescripcion">Modifica los datos del cliente.</p>
+
+            <form id="formModalCliente">
+                <div id="modalCampos">
+                    <!-- Los campos se crearán desde admin.js -->
+                </div>
+
+                <div id="modalMensaje" class="modal-mensaje" role="status" aria-live="polite"></div>
+
+                <div class="modal-acciones">
+                    <button type="button" id="modalCancelar" class="modal-btn modal-btn-secundario">
+                        Cancelar
+                    </button>
+
+                    <button type="submit" id="modalConfirmar" class="modal-btn modal-btn-principal">
+                        Guardar cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
 </body>
 
 </html>
