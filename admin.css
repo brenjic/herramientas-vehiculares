@@ -387,3 +387,122 @@ footer {
     flex-direction: column;
   }
 }
+
+/* ===== ACCIONES DE CLIENTES ===== */
+
+.acciones-cliente {
+  min-width: 260px;
+  padding: 12px;
+}
+
+.acciones-cliente button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.acciones-cliente button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.12);
+}
+
+.acciones-cliente button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+  transform: none;
+}
+
+/* Editar: azul */
+.acciones-cliente .btn-editar {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.acciones-cliente .btn-editar:hover {
+  background: #dbeafe;
+}
+
+/* Activar o desactivar: verde */
+.acciones-cliente .btn-estado {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.acciones-cliente .btn-estado:hover {
+  background: #d1fae5;
+}
+
+/* Restablecer contraseña: violeta */
+.acciones-cliente .btn-contrasena {
+  background: #f5f3ff;
+  color: #6d28d9;
+  border-color: #ddd6fe;
+}
+
+.acciones-cliente .btn-contrasena:hover {
+  background: #ede9fe;
+}
+
+/* Eliminar: rojo */
+.acciones-cliente .btn-eliminar {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.acciones-cliente .btn-eliminar:hover {
+  background: #fee2e2;
+}
+
+/* Tabla más ordenada */
+.tabla-contenedor table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.tabla-contenedor th {
+  white-space: nowrap;
+}
+
+.tabla-contenedor td {
+  vertical-align: middle;
+}
+
+.acciones-cliente {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Adaptación para pantallas pequeñas */
+@media (max-width: 768px) {
+  .tabla-contenedor {
+    overflow-x: auto;
+  }
+
+  .acciones-cliente {
+    min-width: 230px;
+  }
+
+  .acciones-cliente button {
+    font-size: 11px;
+    padding: 8px 10px;
+  }
+}
