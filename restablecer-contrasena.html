@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Restablecer contraseña | Herramientas Vehiculares</title>
+
+    <link rel="stylesheet" href="login.css">
+</head>
+
+<body>
+    <main class="login-container">
+
+        <a href="login.html" class="volver">
+            ← Volver al inicio de sesión
+        </a>
+
+        <section class="login-card">
+
+            <div class="logo">🔐</div>
+
+            <h1>Nueva contraseña</h1>
+
+            <p class="subtitulo">
+                Escribe y confirma tu nueva contraseña para recuperar el acceso.
+            </p>
+
+            <form id="formRestablecer">
+
+                <label for="nuevaContrasena">Nueva contraseña</label>
+
+                <div class="campo-contrasena">
+                    <input type="password" id="nuevaContrasena" placeholder="Mínimo 8 caracteres"
+                        autocomplete="new-password" minlength="8" required>
+
+                    <button type="button" class="btn-ver-contrasena" data-campo="nuevaContrasena"
+                        aria-label="Mostrar nueva contraseña" aria-pressed="false">👁️</button>
+                </div>
+
+                <label for="confirmarContrasena">
+                    Confirmar nueva contraseña
+                </label>
+
+                <div class="campo-contrasena">
+                    <input type="password" id="confirmarContrasena" placeholder="Escribe la contraseña otra vez"
+                        autocomplete="new-password" minlength="8" required>
+
+                    <button type="button" class="btn-ver-contrasena" data-campo="confirmarContrasena"
+                        aria-label="Mostrar confirmación de contraseña" aria-pressed="false">👁️</button>
+                </div>
+
+                <button type="submit" id="btnGuardarContrasena" class="btn-ingresar">
+                    Guardar nueva contraseña
+                </button>
+
+                <p id="mensajeRestablecer" class="mensaje" role="status" aria-live="polite"></p>
+
+            </form>
+
+            <p class="privado">
+                🔒 No compartas tu enlace de recuperación con nadie.
+            </p>
+
+        </section>
+
+        <footer>
+            Herramientas Vehiculares · Compra y reventa inteligente
+        </footer>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="restablecer-contrasena.js"></script>
+
+</body>
+
+</html>

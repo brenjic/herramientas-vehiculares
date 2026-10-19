@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Acceso | Herramientas Vehiculares</title>
+
+    <link rel="stylesheet" href="login.css">
+</head>
+
+<body>
+    <main class="login-container">
+
+        <a href="index.html" class="volver">
+            ← Volver al menú principal
+        </a>
+
+        <section class="login-card">
+
+            <div class="logo">🚘</div>
+
+            <h1>Herramientas Vehiculares</h1>
+            <p class="subtitulo">
+                Ingresa a tu cuenta para continuar
+            </p>
+
+            <div class="roles">
+                <button type="button" class="rol activo" data-rol="cliente">
+                    👤 Cliente
+                </button>
+
+                <button type="button" class="rol" data-rol="admin">
+                    🛡️ Administrador
+                </button>
+            </div>
+
+            <form id="formLogin">
+
+                <label for="correo">Correo electrónico</label>
+
+                <input type="email" id="correo" placeholder="tucorreo@gmail.com" autocomplete="username" required>
+
+                <label for="contrasena">Contraseña</label>
+
+                <div class="campo-contrasena">
+                    <input type="password" id="contrasena" placeholder="Ingresa tu contraseña"
+                        autocomplete="current-password" required>
+
+                    <button type="button" id="btnVerContrasena" class="btn-ver-contrasena"
+                        aria-label="Mostrar contraseña" aria-pressed="false">
+                        👁️
+                    </button>
+                </div>
+
+                <p class="recuperar">
+                    <a href="#" id="enlaceRecuperar">
+                        ¿Olvidaste tu contraseña?
+                    </a>
+                </p>
+
+                <button type="submit" id="btnIngresar" class="btn-ingresar">
+                    Ingresar como cliente
+                </button>
+
+                <p id="mensaje" class="mensaje" role="status" aria-live="polite"></p>
+
+            </form>
+
+            <p class="privado">
+                🔒 Acceso privado para usuarios autorizados.
+                No hay registro público.
+            </p>
+
+        </section>
+
+        <footer>
+            Herramientas Vehiculares · Compra y reventa inteligente
+        </footer>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="login.js"></script>
+
+</body>
+
+</html>
