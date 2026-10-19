@@ -102,9 +102,7 @@ if (enlaceRecuperar) {
 
       if (error) {
         console.error("Error al solicitar recuperación:", error);
-        throw new Error(
-          "No se pudo enviar el correo. Revisa la configuración de recuperación en Supabase.",
-        );
+        throw new Error(error.message);
       }
 
       mostrarMensaje(
