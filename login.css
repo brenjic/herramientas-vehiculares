@@ -214,3 +214,90 @@ footer {
   font-size: 18px;
   padding: 5px;
 }
+
+/* ===== SOLICITAR ACCESO POR WHATSAPP ===== */
+
+.solicitar-acceso {
+  margin-top: 26px;
+  padding: 22px 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #f9fafb;
+  text-align: center;
+}
+
+.acceso-icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 12px;
+  border-radius: 12px;
+  background: #e8eefc;
+  font-size: 23px;
+}
+
+.solicitar-acceso h2 {
+  margin: 0 0 9px;
+  color: #1f2937;
+  font-size: 18px;
+}
+
+.acceso-descripcion {
+  margin: 0 0 17px;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.acceso-descripcion strong {
+  color: #641b28;
+  font-size: 16px;
+}
+
+.btn-whatsapp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 13px 15px;
+  border-radius: 10px;
+  background: #16a34a;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.btn-whatsapp:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+}
+
+.whatsapp-icon {
+  font-size: 21px;
+  line-height: 1;
+}
+
+.acceso-nota {
+  margin: 13px 0 0;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+  .solicitar-acceso {
+    padding: 18px 14px;
+  }
+
+  .btn-whatsapp {
+    font-size: 13px;
+  }
+}
