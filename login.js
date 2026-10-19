@@ -95,7 +95,8 @@ if (enlaceRecuperar) {
       const { error } = await clienteSupabase.auth.resetPasswordForEmail(
         correo,
         {
-          redirectTo: `${window.location.origin}${window.location.pathname.replace(/login\.html$/i, "")}restablecer-contrasena.html`,
+          redirectTo:
+            "https://brenjic.github.io/herramientas-vehiculares/restablecer-contrasena.html",
         },
       );
 
