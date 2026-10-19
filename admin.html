@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Panel de Administrador | Herramientas Vehiculares</title>
 
     <link rel="stylesheet" href="admin.css">
@@ -15,6 +16,7 @@
 
         <!-- MENÚ LATERAL -->
         <aside class="sidebar">
+
             <div class="logo">
                 <span class="logo-icon">🚗</span>
                 <div>
@@ -37,9 +39,10 @@
                 <a href="#nuevo-cliente">＋ &nbsp; Registrar cliente</a>
             </nav>
 
-            <button id="btnCerrarSesion" class="cerrar-sesion">
+            <button id="btnCerrarSesion" class="cerrar-sesion" type="button">
                 ↪ Cerrar sesión
             </button>
+
         </aside>
 
         <!-- CONTENIDO PRINCIPAL -->
@@ -56,6 +59,7 @@
 
             <!-- RESUMEN -->
             <section class="estadisticas">
+
                 <article class="tarjeta">
                     <div class="icono azul">👥</div>
                     <div>
@@ -79,21 +83,25 @@
                         <h2 id="clientesInactivos">0</h2>
                     </div>
                 </article>
+
             </section>
 
             <!-- REGISTRAR CLIENTE -->
             <section class="seccion" id="nuevo-cliente">
+
                 <div class="titulo-seccion">
                     <div>
                         <h2>Registrar nuevo cliente</h2>
                         <p>Crea una cuenta para que tu cliente pueda ingresar.</p>
                     </div>
+
                     <span class="etiqueta">Nueva cuenta</span>
                 </div>
 
                 <form id="formCliente">
 
                     <div class="campos">
+
                         <div class="campo">
                             <label for="nombreCliente">Nombre completo</label>
                             <input type="text" id="nombreCliente" placeholder="Ej. Juan Pérez" required>
@@ -101,13 +109,14 @@
 
                         <div class="campo">
                             <label for="correoCliente">Correo electrónico</label>
-                            <input type="email" id="correoCliente" placeholder="cliente@gmail.com" required>
+                            <input type="email" id="correoCliente" placeholder="cliente@gmail.com" autocomplete="email"
+                                required>
                         </div>
 
                         <div class="campo">
                             <label for="contrasenaCliente">Contraseña inicial</label>
                             <input type="password" id="contrasenaCliente" placeholder="Mínimo 8 caracteres"
-                                minlength="8" required>
+                                minlength="8" autocomplete="new-password" required>
                         </div>
 
                         <div class="campo">
@@ -117,19 +126,22 @@
                                 <option value="false">Inactiva</option>
                             </select>
                         </div>
+
                     </div>
 
-                    <div id="mensajeAdmin" role="status"></div>
+                    <div id="mensajeAdmin" role="status" aria-live="polite"></div>
 
                     <button type="submit" class="btn-principal">
                         ＋ Crear cuenta de cliente
                     </button>
 
                 </form>
+
             </section>
 
             <!-- LISTA DE CLIENTES -->
             <section class="seccion" id="clientes">
+
                 <div class="titulo-seccion">
                     <div>
                         <h2>Clientes registrados</h2>
@@ -142,6 +154,7 @@
                 </div>
 
                 <div class="tabla-contenedor">
+
                     <table>
                         <thead>
                             <tr>
@@ -155,12 +168,14 @@
                         <tbody id="listaClientes">
                             <tr>
                                 <td colspan="4" class="vacio">
-                                    Todavía no se han cargado los clientes.
+                                    Cargando clientes...
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+
                 </div>
+
             </section>
 
             <footer>
@@ -168,31 +183,38 @@
             </footer>
 
         </main>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="admin.js"></script>
+    </div>
 
     <!-- VENTANA MODAL PARA GESTIONAR CLIENTES -->
     <div id="modalCliente" class="modal-overlay" aria-hidden="true">
+
         <div class="modal-contenido" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
 
             <div class="modal-encabezado">
                 <div class="modal-icono" id="modalIcono">✏️</div>
-                <button type="button" id="modalCerrar" class="modal-cerrar" aria-label="Cerrar ventana">✕</button>
+
+                <button type="button" id="modalCerrar" class="modal-cerrar" aria-label="Cerrar ventana">
+                    ✕
+                </button>
             </div>
 
             <h2 id="modalTitulo">Editar cliente</h2>
-            <p id="modalDescripcion">Modifica los datos del cliente.</p>
+
+            <p id="modalDescripcion">
+                Modifica los datos del cliente.
+            </p>
 
             <form id="formModalCliente">
+
                 <div id="modalCampos">
-                    <!-- Los campos se crearán desde admin.js -->
+                    <!-- Los campos se crean desde admin.js -->
                 </div>
 
                 <div id="modalMensaje" class="modal-mensaje" role="status" aria-live="polite"></div>
 
                 <div class="modal-acciones">
+
                     <button type="button" id="modalCancelar" class="modal-btn modal-btn-secundario">
                         Cancelar
                     </button>
@@ -200,11 +222,18 @@
                     <button type="submit" id="modalConfirmar" class="modal-btn modal-btn-principal">
                         Guardar cambios
                     </button>
+
                 </div>
+
             </form>
+
         </div>
+
     </div>
 
+    <!-- SCRIPTS: PRIMERO SUPABASE, DESPUÉS NUESTRO JAVASCRIPT -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="admin.js"></script>
 
 </body>
 
