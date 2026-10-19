@@ -10,6 +10,22 @@ const formulario = document.getElementById("formCliente");
 const mensaje = document.getElementById("mensajeAdmin");
 const listaClientes = document.getElementById("listaClientes");
 
+// Elementos de la ventana modal
+const modal = document.getElementById("modalCliente");
+const formularioModal = document.getElementById("formModalCliente");
+const camposModal = document.getElementById("modalCampos");
+const tituloModal = document.getElementById("modalTitulo");
+const descripcionModal = document.getElementById("modalDescripcion");
+const iconoModal = document.getElementById("modalIcono");
+const mensajeModal = document.getElementById("modalMensaje");
+const botonConfirmarModal = document.getElementById("modalConfirmar");
+const botonCerrarModal = document.getElementById("modalCerrar");
+const botonCancelarModal = document.getElementById("modalCancelar");
+
+let accionModal = "";
+let clienteModal = null;
+let datosModal = {};
+
 function mostrarMensaje(texto, error = false) {
   if (!mensaje) return;
   mensaje.textContent = texto;
@@ -53,6 +69,7 @@ async function comprobarAdministrador() {
   return true;
 }
 
+// Llamar a la función segura de Supabase
 async function gestionarCliente(accion, id, datos = {}) {
   const { data, error } = await clienteSupabase.functions.invoke(
     "gestionar-cliente",
@@ -62,17 +79,279 @@ async function gestionarCliente(accion, id, datos = {}) {
   );
 
   if (error) {
-    console.error("Error de gestionar-cliente:", error);
     throw new Error(
       data?.error || error.message || "No se pudo realizar la operación.",
     );
   }
 
-  if (data?.error) throw new Error(data.error);
+  if (data?.error) {
+    throw new Error(data.error);
+  }
 
   return data;
 }
 
+// Crear campos dentro de la ventana
+function crearCampoModal(id, etiqueta, tipo, valor = "") {
+  const contenedor = document.createElement("div");
+  contenedor.className = "modal-campo";
+
+  const label = document.createElement("label");
+  label.htmlFor = id;
+  label.textContent = etiqueta;
+
+  const input = document.createElement("input");
+  input.id = id;
+  input.name = id;
+  input.type = tipo;
+  input.value = valor;
+  input.required = true;
+
+  if (tipo === "email") {
+    input.autocomplete = "email";
+  }
+
+  if (tipo === "password") {
+    input.autocomplete = "new-password";
+    input.minLength = 8;
+    input.placeholder = "Mínimo 8 caracteres";
+  }
+
+  contenedor.append(label, input);
+  camposModal.appendChild(contenedor);
+
+  return input;
+}
+
+// Abrir una ventana según la acción
+function abrirModal(accion, cliente) {
+  accionModal = accion;
+  clienteModal = cliente;
+  datosModal = {};
+
+  formularioModal.reset();
+  camposModal.innerHTML = "";
+  mensajeModal.textContent = "";
+  mensajeModal.style.color = "#dc2626";
+  botonConfirmarModal.disabled = false;
+  botonCancelarModal.disabled = false;
+  botonCerrarModal.disabled = false;
+  botonConfirmarModal.classList.remove("modal-btn-peligro");
+
+  if (accion === "editar") {
+    iconoModal.textContent = "✏️";
+    tituloModal.textContent = "Editar cliente";
+    descripcionModal.textContent =
+      "Actualiza los datos de acceso de este cliente.";
+    botonConfirmarModal.textContent = "Guardar cambios";
+
+    crearCampoModal(
+      "modalNombre",
+      "Nombre completo",
+      "text",
+      cliente.nombre || "",
+    );
+
+    crearCampoModal(
+      "modalCorreo",
+      "Correo electrónico",
+      "email",
+      cliente.email || "",
+    );
+  }
+
+  if (accion === "estado") {
+    const activar = !cliente.activo;
+
+    iconoModal.textContent = activar ? "✅" : "⏸️";
+    tituloModal.textContent = activar
+      ? "Activar cliente"
+      : "Desactivar cliente";
+
+    descripcionModal.textContent = activar
+      ? `¿Quieres permitir que ${cliente.nombre} vuelva a ingresar al sistema?`
+      : `¿Quieres impedir que ${cliente.nombre} ingrese al sistema?`;
+
+    botonConfirmarModal.textContent = activar
+      ? "Sí, activar cuenta"
+      : "Sí, desactivar cuenta";
+
+    if (!activar) {
+      botonConfirmarModal.classList.add("modal-btn-peligro");
+    }
+
+    datosModal.activo = activar;
+  }
+
+  if (accion === "contrasena") {
+    iconoModal.textContent = "🔐";
+    tituloModal.textContent = "Restablecer contraseña";
+    descripcionModal.textContent =
+      "Establece una contraseña temporal nueva para este cliente.";
+
+    botonConfirmarModal.textContent = "Cambiar contraseña";
+
+    crearCampoModal("modalPassword", "Nueva contraseña temporal", "password");
+  }
+
+  if (accion === "eliminar") {
+    iconoModal.textContent = "🗑️";
+    tituloModal.textContent = "Eliminar cliente";
+    descripcionModal.textContent = `Vas a eliminar la cuenta de ${cliente.nombre || cliente.email}. Esta acción no se puede deshacer.`;
+
+    botonConfirmarModal.textContent = "Eliminar definitivamente";
+    botonConfirmarModal.classList.add("modal-btn-peligro");
+
+    const aviso = document.createElement("p");
+    aviso.textContent =
+      "La cuenta de acceso será eliminada. Revisa primero si existen datos asociados que deban conservarse.";
+    aviso.style.color = "#b91c1c";
+    aviso.style.fontSize = "13px";
+    aviso.style.lineHeight = "1.6";
+    camposModal.appendChild(aviso);
+
+    const confirmacion = crearCampoModal(
+      "modalConfirmacion",
+      "Escribe ELIMINAR para confirmar",
+      "text",
+    );
+
+    confirmacion.placeholder = "ELIMINAR";
+    confirmacion.autocomplete = "off";
+    datosModal.campoConfirmacion = true;
+  }
+
+  modal.classList.add("modal-abierto");
+  modal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+
+  const primerCampo = camposModal.querySelector("input");
+  if (primerCampo) primerCampo.focus();
+  else botonConfirmarModal.focus();
+}
+
+function cerrarModal() {
+  if (!modal || botonConfirmarModal.disabled) return;
+
+  modal.classList.remove("modal-abierto");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+
+  accionModal = "";
+  clienteModal = null;
+  datosModal = {};
+}
+
+botonCerrarModal.addEventListener("click", cerrarModal);
+botonCancelarModal.addEventListener("click", cerrarModal);
+
+modal.addEventListener("click", (evento) => {
+  if (evento.target === modal) cerrarModal();
+});
+
+document.addEventListener("keydown", (evento) => {
+  if (evento.key === "Escape" && modal.classList.contains("modal-abierto")) {
+    cerrarModal();
+  }
+});
+
+// Guardar la operación solicitada en la ventana
+formularioModal.addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+
+  if (!clienteModal || !accionModal) return;
+
+  if (
+    accionModal === "eliminar" &&
+    document.getElementById("modalConfirmacion")?.value !== "ELIMINAR"
+  ) {
+    mensajeModal.textContent = "Escribe ELIMINAR exactamente para confirmar.";
+    return;
+  }
+
+  const accion = accionModal;
+  const cliente = clienteModal;
+  const datos = { ...datosModal };
+
+  if (accion === "editar") {
+    datos.nombre = document.getElementById("modalNombre").value.trim();
+    datos.email = document.getElementById("modalCorreo").value.trim();
+  }
+
+  if (accion === "contrasena") {
+    datos.password = document.getElementById("modalPassword").value;
+  }
+
+  delete datos.campoConfirmacion;
+
+  botonConfirmarModal.disabled = true;
+  botonCancelarModal.disabled = true;
+  botonCerrarModal.disabled = true;
+  botonConfirmarModal.textContent = "Procesando...";
+  mensajeModal.textContent = "";
+
+  try {
+    await gestionarCliente(accion, cliente.id, datos);
+
+    const mensajes = {
+      editar: "Cliente actualizado correctamente.",
+      estado: datos.activo
+        ? "Cliente activado correctamente."
+        : "Cliente desactivado correctamente.",
+      contrasena: "Contraseña restablecida correctamente.",
+      eliminar: "Cliente eliminado correctamente.",
+    };
+
+    modal.classList.remove("modal-abierto");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+
+    accionModal = "";
+    clienteModal = null;
+    datosModal = {};
+
+    mostrarMensaje(mensajes[accion] || "Operación completada.");
+    await cargarClientes();
+
+    if (accion === "contrasena") {
+      mostrarMensaje(
+        "Contraseña actualizada. Comunícala al cliente de forma privada.",
+      );
+    }
+  } catch (error) {
+    console.error("Error al gestionar cliente:", error);
+
+    mensajeModal.textContent =
+      error.message || "No se pudo completar la operación.";
+
+    botonConfirmarModal.disabled = false;
+    botonCancelarModal.disabled = false;
+    botonCerrarModal.disabled = false;
+
+    const textos = {
+      editar: "Guardar cambios",
+      estado: datos.activo ? "Sí, activar cuenta" : "Sí, desactivar cuenta",
+      contrasena: "Cambiar contraseña",
+      eliminar: "Eliminar definitivamente",
+    };
+
+    botonConfirmarModal.textContent = textos[accion] || "Reintentar";
+  }
+});
+
+// Crear botones de la tabla
+function crearBoton(texto, clase, accion) {
+  const boton = document.createElement("button");
+  boton.type = "button";
+  boton.textContent = texto;
+  boton.className = clase;
+
+  boton.addEventListener("click", accion);
+
+  return boton;
+}
+
+// Cargar clientes y actualizar contadores
 async function cargarClientes() {
   if (!listaClientes) return;
 
@@ -95,9 +374,11 @@ async function cargarClientes() {
     const inactivos = document.getElementById("clientesInactivos");
 
     if (total) total.textContent = clientes.length;
+
     if (activos) {
       activos.textContent = clientes.filter((c) => c.activo === true).length;
     }
+
     if (inactivos) {
       inactivos.textContent = clientes.filter((c) => c.activo !== true).length;
     }
@@ -113,130 +394,42 @@ async function cargarClientes() {
     for (const cliente of clientes) {
       const fila = document.createElement("tr");
 
-      const celdaNombre = document.createElement("td");
-      celdaNombre.textContent = cliente.nombre || "Sin nombre";
+      const nombre = document.createElement("td");
+      nombre.textContent = cliente.nombre || "Sin nombre";
 
-      const celdaCorreo = document.createElement("td");
-      celdaCorreo.textContent = cliente.email || "Sin correo";
+      const correo = document.createElement("td");
+      correo.textContent = cliente.email || "Sin correo";
 
-      const celdaEstado = document.createElement("td");
-      celdaEstado.textContent = cliente.activo ? "Activo" : "Inactivo";
+      const estado = document.createElement("td");
+      estado.textContent = cliente.activo ? "Activo" : "Inactivo";
 
-      const celdaAcciones = document.createElement("td");
-      celdaAcciones.className = "acciones-cliente";
+      const acciones = document.createElement("td");
+      acciones.className = "acciones-cliente";
 
-      const botonEditar = crearBoton("Editar", "btn-editar", async () => {
-        const nombre = prompt(
-          "Nuevo nombre del cliente:",
-          cliente.nombre || "",
-        );
-        if (nombre === null) return;
-
-        const email = prompt("Nuevo correo del cliente:", cliente.email || "");
-        if (email === null) return;
-
-        if (!nombre.trim() || !email.trim()) {
-          alert("El nombre y el correo son obligatorios.");
-          return;
-        }
-
-        if (!confirm("¿Guardar los cambios de este cliente?")) return;
-
-        await ejecutarAccion(async () => {
-          await gestionarCliente("editar", cliente.id, {
-            nombre: nombre.trim(),
-            email: email.trim(),
-          });
-          mostrarMensaje("Cliente actualizado correctamente.");
-          await cargarClientes();
-        });
-      });
-
-      const botonEstado = crearBoton(
-        cliente.activo ? "Desactivar" : "Activar",
-        "btn-estado",
-        async () => {
-          const nuevoEstado = !cliente.activo;
-          const accionTexto = nuevoEstado ? "activar" : "desactivar";
-
-          if (
-            !confirm(
-              `¿Deseas ${accionTexto} a ${cliente.nombre || "este cliente"}?`,
-            )
-          ) {
-            return;
-          }
-
-          await ejecutarAccion(async () => {
-            await gestionarCliente("estado", cliente.id, {
-              activo: nuevoEstado,
-            });
-            mostrarMensaje(
-              nuevoEstado ? "Cliente activado." : "Cliente desactivado.",
-            );
-            await cargarClientes();
-          });
-        },
+      acciones.append(
+        crearBoton("Editar", "btn-editar", () => abrirModal("editar", cliente)),
+        crearBoton(
+          cliente.activo ? "Desactivar" : "Activar",
+          "btn-estado",
+          () => abrirModal("estado", cliente),
+        ),
+        crearBoton("Restablecer contraseña", "btn-contrasena", () =>
+          abrirModal("contrasena", cliente),
+        ),
+        crearBoton("Eliminar", "btn-eliminar", () =>
+          abrirModal("eliminar", cliente),
+        ),
       );
 
-      const botonContrasena = crearBoton(
-        "Restablecer contraseña",
-        "btn-contrasena",
-        async () => {
-          const password = prompt(
-            "Escribe una contraseña temporal de al menos 8 caracteres para este cliente:",
-          );
-
-          if (password === null) return;
-
-          if (password.length < 8) {
-            alert("La contraseña debe tener al menos 8 caracteres.");
-            return;
-          }
-
-          if (!confirm("¿Cambiar la contraseña de este cliente?")) return;
-
-          await ejecutarAccion(async () => {
-            await gestionarCliente("contrasena", cliente.id, { password });
-            mostrarMensaje(
-              "Contraseña restablecida. Comunícala al cliente de forma privada.",
-            );
-            alert(
-              "Contraseña actualizada. Guárdala y compártela de forma privada.",
-            );
-          });
-        },
-      );
-
-      const botonEliminar = crearBoton("Eliminar", "btn-eliminar", async () => {
-        const confirmacion = prompt(
-          `Para eliminar definitivamente a ${cliente.nombre || "este cliente"}, escribe ELIMINAR:`,
-        );
-
-        if (confirmacion !== "ELIMINAR") return;
-
-        await ejecutarAccion(async () => {
-          await gestionarCliente("eliminar", cliente.id);
-          mostrarMensaje("Cliente eliminado correctamente.");
-          await cargarClientes();
-        });
-      });
-
-      celdaAcciones.append(
-        botonEditar,
-        botonEstado,
-        botonContrasena,
-        botonEliminar,
-      );
-
-      fila.append(celdaNombre, celdaCorreo, celdaEstado, celdaAcciones);
-
+      fila.append(nombre, correo, estado, acciones);
       listaClientes.appendChild(fila);
     }
   } catch (error) {
     console.error("Error al cargar clientes:", error);
+
     listaClientes.innerHTML =
       '<tr><td colspan="4">No se pudieron cargar los clientes.</td></tr>';
+
     mostrarMensaje(
       error.message || "Error al cargar la lista de clientes.",
       true,
@@ -244,34 +437,7 @@ async function cargarClientes() {
   }
 }
 
-function crearBoton(texto, clase, accion) {
-  const boton = document.createElement("button");
-  boton.type = "button";
-  boton.textContent = texto;
-  boton.className = clase;
-
-  boton.addEventListener("click", async () => {
-    boton.disabled = true;
-    try {
-      await accion();
-    } finally {
-      boton.disabled = false;
-    }
-  });
-
-  return boton;
-}
-
-async function ejecutarAccion(accion) {
-  try {
-    await accion();
-  } catch (error) {
-    console.error(error);
-    mostrarMensaje(error.message || "No se pudo completar la operación.", true);
-    alert(error.message || "No se pudo completar la operación.");
-  }
-}
-
+// Registrar nuevos clientes
 if (formulario) {
   formulario.addEventListener("submit", async (evento) => {
     evento.preventDefault();
@@ -283,7 +449,9 @@ if (formulario) {
     if (boton) boton.disabled = true;
 
     const nombre = document.getElementById("nombreCliente")?.value.trim() || "";
+
     const email = document.getElementById("correoCliente")?.value.trim() || "";
+
     const password = document.getElementById("contrasenaCliente")?.value || "";
 
     const activo = document.getElementById("estadoCliente")?.value !== "false";
@@ -317,9 +485,11 @@ if (formulario) {
 
       mostrarMensaje("¡Cliente creado correctamente!");
       formulario.reset();
+
       await cargarClientes();
     } catch (error) {
       console.error(error);
+
       mostrarMensaje(
         error.message || "Ocurrió un error al crear el cliente.",
         true,
@@ -331,11 +501,13 @@ if (formulario) {
 }
 
 const botonActualizar = document.getElementById("btnActualizar");
+
 if (botonActualizar) {
   botonActualizar.addEventListener("click", cargarClientes);
 }
 
 const botonCerrarSesion = document.getElementById("btnCerrarSesion");
+
 if (botonCerrarSesion) {
   botonCerrarSesion.addEventListener("click", async () => {
     await clienteSupabase.auth.signOut();
@@ -345,5 +517,8 @@ if (botonCerrarSesion) {
 
 (async function iniciarPanel() {
   const autorizado = await comprobarAdministrador();
-  if (autorizado) await cargarClientes();
+
+  if (autorizado) {
+    await cargarClientes();
+  }
 })();
