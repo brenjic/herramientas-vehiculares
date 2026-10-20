@@ -8,6 +8,16 @@
     <link rel="stylesheet" href="styles.css">
 
     <style>
+        /* Descripciones debajo de los campos */
+        .field-help {
+            display: block;
+            margin-top: 5px;
+            color: #64748b;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        /* Notificaciones */
         .notificacion {
             position: fixed;
             top: 20px;
@@ -52,9 +62,8 @@
             font-size: 13px;
             line-height: 1.4;
         }
-    </style>
 
-    <style>
+        /* Ventana de confirmación */
         .modal-confirmacion {
             display: none;
             position: fixed;
@@ -148,7 +157,6 @@
             }
         }
     </style>
-
 </head>
 
 <body>
@@ -184,28 +192,42 @@
 
         <form id="form">
 
+            <!-- 1. DATOS DEL VEHÍCULO -->
             <section class="panel">
                 <h2>1. Datos del vehículo</h2>
 
                 <div class="grid">
+
                     <div class="field">
                         <label for="vehicle">Vehículo / modelo</label>
                         <input id="vehicle" name="vehicle" type="text" placeholder="Ej. Suzuki SX-4" required>
+                        <small class="field-help">
+                            Ingresa la marca y el modelo del vehículo.
+                        </small>
                     </div>
 
                     <div class="field">
                         <label for="plate">Placa</label>
                         <input id="plate" name="plate" type="text" placeholder="Ej. A7K-029">
+                        <small class="field-help">
+                            Escribe la placa de matrícula del vehículo.
+                        </small>
                     </div>
 
                     <div class="field">
                         <label for="year">Año</label>
                         <input id="year" name="year" type="number" min="1900" max="2100" placeholder="Ej. 2018">
+                        <small class="field-help">
+                            Indica el año de fabricación del vehículo.
+                        </small>
                     </div>
 
                     <div class="field">
                         <label for="km">Kilometraje</label>
                         <input id="km" name="km" type="number" min="0" placeholder="Ej. 85000">
+                        <small class="field-help">
+                            Registra los kilómetros que marca el odómetro.
+                        </small>
                     </div>
 
                     <div class="field">
@@ -217,112 +239,176 @@
                             <option value="Publicado">Publicado para venta</option>
                             <option value="Vendido">Vendido</option>
                         </select>
+                        <small class="field-help">
+                            Selecciona la etapa actual de la compra o venta.
+                        </small>
                     </div>
+
                 </div>
             </section>
 
+            <!-- 2. COMPRA Y VENTA -->
             <section class="panel">
                 <h2>2. Compra y venta</h2>
                 <p>Ingresa los importes en soles peruanos (S/).</p>
 
                 <div class="grid">
+
                     <div class="field">
                         <label for="buy">Precio de compra (S/)</label>
                         <input id="buy" name="buy" type="number" min="0" step="0.01" value="18000">
+                        <small class="field-help">
+                            Ingresa el importe que pagarás por el vehículo.
+                        </small>
                     </div>
 
                     <div class="field">
                         <label for="ask">Precio publicado (S/)</label>
                         <input id="ask" name="ask" type="number" min="0" step="0.01" value="20000">
+                        <small class="field-help">
+                            Ingresa el precio que el vendedor anuncia en su publicación.
+                        </small>
                     </div>
 
                     <div class="field">
                         <label for="sale">Precio de venta estimado (S/)</label>
                         <input id="sale" name="sale" type="number" min="0" step="0.01" value="22500">
+                        <small class="field-help">
+                            Registra cuánto esperas recibir por la venta.
+                        </small>
                     </div>
 
                     <div class="field">
                         <label for="real">Precio de venta real (S/)</label>
                         <input id="real" name="real" type="number" min="0" step="0.01" value="0">
+                        <small class="field-help">
+                            Ingresa el importe final que pagó el comprador.
+                        </small>
                     </div>
+
                 </div>
             </section>
 
+            <!-- 3. GASTOS -->
             <section class="panel">
                 <h2>3. Gastos de la operación</h2>
                 <p>Si no tienes un gasto, déjalo en cero.</p>
 
                 <div class="grid">
+
                     <div class="field">
                         <label for="repairs">Reparaciones (S/)</label>
                         <input id="repairs" name="repairs" type="number" min="0" step="0.01" value="0">
+                        <small class="field-help">
+                            Registra el costo de repuestos y arreglos mecánicos.
+                        </small>
                     </div>
 
                     <div class="field">
                         <label for="paperwork">Trámites y transferencia (S/)</label>
                         <input id="paperwork" name="paperwork" type="number" min="0" step="0.01" value="0">
+                        <small class="field-help">
+                            Ingresa los gastos de documentación y transferencia.
+                        </small>
                     </div>
 
                     <div class="field">
                         <label for="cleaning">Lavado y limpieza (S/)</label>
                         <input id="cleaning" name="cleaning" type="number" min="0" step="0.01" value="0">
+                        <small class="field-help">
+                            Indica el costo de limpieza y acondicionamiento.
+                        </small>
                     </div>
 
                     <div class="field">
                         <label for="fuel">Combustible (S/)</label>
                         <input id="fuel" name="fuel" type="number" min="0" step="0.01" value="0">
+                        <small class="field-help">
+                            Registra el gasto de combustible durante la operación.
+                        </small>
                     </div>
 
                     <div class="field">
                         <label for="storage">Estacionamiento (S/)</label>
                         <input id="storage" name="storage" type="number" min="0" step="0.01" value="0">
+                        <small class="field-help">
+                            Ingresa los costos de cochera o estacionamiento.
+                        </small>
                     </div>
 
                     <div class="field">
                         <label for="sat">SAT (S/)</label>
                         <input id="sat" name="sat" type="number" min="0" step="0.01" value="0">
+                        <small class="field-help">
+                            Registra los pagos o deudas municipales que correspondan.
+                        </small>
                     </div>
 
                     <div class="field">
                         <label for="atu">ATU (S/)</label>
                         <input id="atu" name="atu" type="number" min="0" step="0.01" value="0">
+                        <small class="field-help">
+                            Ingresa los costos o deudas de transporte que correspondan.
+                        </small>
                     </div>
 
                     <div class="field">
                         <label for="sutran">SUTRAN (S/)</label>
                         <input id="sutran" name="sutran" type="number" min="0" step="0.01" value="0">
+                        <small class="field-help">
+                            Registra las multas o pagos correspondientes a SUTRAN.
+                        </small>
                     </div>
 
                     <div class="field">
                         <label for="fines">Multas (S/)</label>
                         <input id="fines" name="fines" type="number" min="0" step="0.01" value="0">
+                        <small class="field-help">
+                            Ingresa otras multas que debas considerar en la operación.
+                        </small>
                     </div>
 
                     <div class="field">
                         <label for="liens">Gravámenes y deudas (S/)</label>
                         <input id="liens" name="liens" type="number" min="0" step="0.01" value="0">
+                        <small class="field-help">
+                            Registra los importes que asumirás para resolver cargas o deudas.
+                        </small>
                     </div>
 
                     <div class="field">
                         <label for="fees">Comisiones (S/)</label>
                         <input id="fees" name="fees" type="number" min="0" step="0.01" value="0">
+                        <small class="field-help">
+                            Indica los pagos a intermediarios u otros servicios.
+                        </small>
                     </div>
 
                     <div class="field">
                         <label for="misc">Otros gastos (S/)</label>
                         <input id="misc" name="misc" type="number" min="0" step="0.01" value="0">
+                        <small class="field-help">
+                            Registra cualquier costo adicional de la operación.
+                        </small>
                     </div>
 
                     <div class="field">
                         <label for="target">Ganancia objetivo (S/)</label>
                         <input id="target" name="target" type="number" min="0" step="0.01" value="3000">
+                        <small class="field-help">
+                            Indica cuánto dinero deseas ganar con la venta.
+                        </small>
                     </div>
+
                 </div>
 
                 <div class="field">
                     <label for="notes">Notas de la operación</label>
                     <textarea id="notes" name="notes" rows="4"
                         placeholder="Detalles, observaciones o pendientes..."></textarea>
+                    <small class="field-help">
+                        Añade observaciones, reparaciones pendientes o detalles importantes.
+                    </small>
                 </div>
 
                 <div class="button-group">
@@ -335,46 +421,71 @@
                     </button>
                 </div>
             </section>
+
         </form>
 
+        <!-- 4. RESULTADOS -->
         <section class="panel">
             <h2>4. Resultados de la operación</h2>
 
             <div class="metrics">
+
                 <article class="metric">
                     <span>Inversión total</span>
                     <strong id="investment">S/ 0.00</strong>
+                    <small class="field-help">
+                        Precio de compra más todos los gastos registrados.
+                    </small>
                 </article>
 
                 <article class="metric">
                     <span>Total de gastos</span>
                     <strong id="expenses">S/ 0.00</strong>
+                    <small class="field-help">
+                        Suma de los gastos adicionales del vehículo.
+                    </small>
                 </article>
 
                 <article class="metric">
                     <span>Ganancia estimada</span>
                     <strong id="profit">S/ 0.00</strong>
+                    <small class="field-help">
+                        Diferencia entre la venta estimada y la inversión total.
+                    </small>
                 </article>
 
                 <article class="metric">
                     <span>Rentabilidad (ROI)</span>
                     <strong id="roi">—</strong>
+                    <small class="field-help">
+                        Porcentaje de ganancia respecto a la inversión.
+                    </small>
                 </article>
 
                 <article class="metric">
                     <span>Punto de equilibrio</span>
                     <strong id="breakEven">S/ 0.00</strong>
+                    <small class="field-help">
+                        Precio mínimo de venta para recuperar la inversión registrada.
+                    </small>
                 </article>
 
                 <article class="metric">
                     <span>Precio para tu ganancia objetivo</span>
                     <strong id="targetPrice">S/ 0.00</strong>
+                    <small class="field-help">
+                        Precio necesario para recuperar la inversión y obtener la ganancia deseada.
+                    </small>
                 </article>
 
                 <article class="metric">
                     <span>Ganancia real</span>
                     <strong id="realProfit">Pendiente</strong>
+                    <small class="field-help">
+                        Ganancia calculada usando el precio final de venta.
+                    </small>
                 </article>
+
             </div>
 
             <p class="help-text">
@@ -383,6 +494,7 @@
             </p>
         </section>
 
+        <!-- 5. HISTORIAL -->
         <section class="panel">
             <h2>5. Historial de operaciones</h2>
 
@@ -432,28 +544,44 @@
         </footer>
 
     </main>
+
+    <!-- Conexión con Supabase y JavaScript existente -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
     <script src="script.js"></script>
 
+    <!-- Notificación de guardado -->
     <div id="notificacion" class="notificacion" role="status" aria-live="polite">
         <span class="notificacion-icono">✓</span>
         <div>
             <strong id="notificacionTitulo">¡Operación guardada!</strong>
-            <p id="notificacionTexto">Tu operación se guardó correctamente.</p>
+            <p id="notificacionTexto">
+                Tu operación se guardó correctamente.
+            </p>
         </div>
     </div>
 
+    <!-- Confirmación de eliminación -->
     <div id="modalEliminar" class="modal-confirmacion" role="dialog" aria-modal="true" aria-labelledby="tituloEliminar">
+
         <div class="modal-contenido">
             <div class="modal-icono">🗑️</div>
+
             <h2 id="tituloEliminar">¿Eliminar operación?</h2>
+
             <p id="textoEliminar">
-                Esta operación se eliminará de tu historial. Esta acción no se puede deshacer.
+                Esta operación se eliminará de tu historial.
+                Esta acción no se puede deshacer.
             </p>
+
             <div class="modal-botones">
-                <button type="button" id="cancelarEliminar">Cancelar</button>
-                <button type="button" id="confirmarEliminar">Sí, eliminar</button>
+                <button type="button" id="cancelarEliminar">
+                    Cancelar
+                </button>
+
+                <button type="button" id="confirmarEliminar">
+                    Sí, eliminar
+                </button>
             </div>
         </div>
     </div>
