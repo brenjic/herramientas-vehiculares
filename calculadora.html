@@ -6,6 +6,149 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora de Reventa | Herramientas Vehiculares</title>
     <link rel="stylesheet" href="styles.css">
+
+    <style>
+        .notificacion {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: min(360px, calc(100vw - 40px));
+            padding: 16px;
+            background: #ffffff;
+            border: 1px solid #bbf7d0;
+            border-left: 5px solid #16a34a;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+            color: #166534;
+            font-family: Arial, sans-serif;
+            opacity: 0;
+            transform: translateY(-12px);
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        .notificacion.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .notificacion-icono {
+            font-size: 26px;
+        }
+
+        .notificacion strong {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 15px;
+        }
+
+        .notificacion p {
+            margin: 0;
+            color: #475569;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+    </style>
+
+    <style>
+        .modal-confirmacion {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-confirmacion.visible {
+            display: flex;
+        }
+
+        .modal-contenido {
+            width: 100%;
+            max-width: 380px;
+            padding: 28px;
+            background: #fff;
+            color: #0f172a;
+            border-radius: 18px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            font-family: Arial, sans-serif;
+            animation: aparecerModal 0.2s ease;
+        }
+
+        .modal-icono {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: #fee2e2;
+            font-size: 30px;
+        }
+
+        .modal-contenido h2 {
+            margin: 0 0 10px;
+            font-size: 22px;
+        }
+
+        .modal-contenido p {
+            margin: 0 0 24px;
+            color: #64748b;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .modal-botones {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-botones button {
+            flex: 1;
+            padding: 12px 10px;
+            border: 0;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        #cancelarEliminar {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        #confirmarEliminar {
+            background: #dc2626;
+            color: white;
+        }
+
+        #confirmarEliminar:hover {
+            background: #b91c1c;
+        }
+
+        @keyframes aparecerModal {
+            from {
+                opacity: 0;
+                transform: translateY(8px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+
 </head>
 
 <body>
@@ -292,6 +435,28 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
     <script src="script.js"></script>
+
+    <div id="notificacion" class="notificacion" role="status" aria-live="polite">
+        <span class="notificacion-icono">✓</span>
+        <div>
+            <strong id="notificacionTitulo">¡Operación guardada!</strong>
+            <p id="notificacionTexto">Tu operación se guardó correctamente.</p>
+        </div>
+    </div>
+
+    <div id="modalEliminar" class="modal-confirmacion" role="dialog" aria-modal="true" aria-labelledby="tituloEliminar">
+        <div class="modal-contenido">
+            <div class="modal-icono">🗑️</div>
+            <h2 id="tituloEliminar">¿Eliminar operación?</h2>
+            <p id="textoEliminar">
+                Esta operación se eliminará de tu historial. Esta acción no se puede deshacer.
+            </p>
+            <div class="modal-botones">
+                <button type="button" id="cancelarEliminar">Cancelar</button>
+                <button type="button" id="confirmarEliminar">Sí, eliminar</button>
+            </div>
+        </div>
+    </div>
 
 </body>
 

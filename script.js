@@ -61,6 +61,28 @@
     return currency.format(Number(value) || 0);
   }
 
+  let temporizadorNotificacion;
+
+  function mostrarNotificacion(titulo, mensaje) {
+    const notificacion = $("notificacion");
+
+    if (!notificacion) {
+      alert(mensaje);
+      return;
+    }
+
+    $("notificacionTitulo").textContent = titulo;
+    $("notificacionTexto").textContent = mensaje;
+
+    notificacion.classList.add("visible");
+
+    clearTimeout(temporizadorNotificacion);
+
+    temporizadorNotificacion = setTimeout(() => {
+      notificacion.classList.remove("visible");
+    }, 3500);
+  }
+
   function numberValue(id) {
     return Math.max(0, Number($(id)?.value) || 0);
   }
@@ -249,11 +271,41 @@
       deleteButton.type = "button";
       deleteButton.textContent = "Eliminar";
       deleteButton.addEventListener("click", async () => {
-        const confirmed = window.confirm(
-          `¿Eliminar la operación "${data.vehicle || "Sin nombre"}" (${data.plate || "Sin placa"})?`,
-        );
+        const modal = $("modalEliminar");
+        const cancelar = $("cancelarEliminar");
+        const confirmar = $("confirmarEliminar");
 
-        if (!confirmed) return;
+        $("textoEliminar").textContent =
+          `Se eliminará "${data.vehicle || "Sin nombre"}" (${data.plate || "Sin placa"}). Esta acción no se puede deshacer.`;
+
+        modal.classList.add("visible");
+
+        const confirmado = await new Promise((resolve) => {
+          const cerrar = (respuesta) => {
+            modal.classList.remove("visible");
+            confirmar.removeEventListener("click", aceptar);
+            cancelar.removeEventListener("click", rechazar);
+            modal.removeEventListener("click", fuera);
+            document.removeEventListener("keydown", teclaEscape);
+            resolve(respuesta);
+          };
+
+          const aceptar = () => cerrar(true);
+          const rechazar = () => cerrar(false);
+          const fuera = (event) => {
+            if (event.target === modal) rechazar();
+          };
+          const teclaEscape = (event) => {
+            if (event.key === "Escape") rechazar();
+          };
+
+          confirmar.addEventListener("click", aceptar);
+          cancelar.addEventListener("click", rechazar);
+          modal.addEventListener("click", fuera);
+          document.addEventListener("keydown", teclaEscape);
+        });
+
+        if (!confirmado) return;
 
         deleteButton.disabled = true;
 
@@ -264,7 +316,10 @@
 
         if (error) {
           console.error(error);
-          alert("No se pudo eliminar la operación. Revisa la conexión.");
+          mostrarNotificacion(
+            "No se pudo eliminar",
+            "Ocurrió un error al eliminar la operación.",
+          );
           deleteButton.disabled = false;
           return;
         }
@@ -272,9 +327,18 @@
         try {
           await loadOperations();
           renderTable();
+
+          mostrarNotificacion(
+            "¡Operación eliminada!",
+            "La operación se eliminó correctamente de tu historial.",
+          );
         } catch (err) {
           console.error(err);
-          alert("Se eliminó, pero no se pudo actualizar el historial.");
+
+          mostrarNotificacion(
+            "Operación eliminada",
+            "Se eliminó, pero no se pudo actualizar el historial.",
+          );
         }
       });
 
@@ -336,7 +400,10 @@
 
       await loadOperations();
       renderTable();
-      alert("Operación guardada en tu cuenta de forma segura.");
+      mostrarNotificacion(
+        "¡Operación guardada!",
+        "Tu operación se guardó correctamente en tu cuenta.",
+      );
       form.reset();
       calculate();
     } catch (error) {
