@@ -659,3 +659,65 @@ td button:hover {
     animation-iteration-count: 1 !important;
   }
 }
+```css
+/* Compra y venta: tarjetas visuales */
+.panel-compra-venta .section-description {
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.panel-compra-venta .price-card {
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.panel-compra-venta .price-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07);
+}
+
+.panel-compra-venta .price-card label {
+  display: block;
+  margin-bottom: 9px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.panel-compra-venta .price-card input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.panel-compra-venta .price-original {
+  border-left: 4px solid #64748b;
+}
+
+.panel-compra-venta .price-buy {
+  border-left: 4px solid #2563eb;
+}
+
+.panel-compra-venta .price-publish {
+  border-left: 4px solid #16a34a;
+}
+
+.panel-compra-venta .price-estimated {
+  border-left: 4px solid #d97706;
+}
+
+.panel-compra-venta .price-real {
+  border-left: 4px solid #0d9488;
+}
+
+@media (max-width: 600px) {
+  .panel-compra-venta .price-card {
+    padding: 13px;
+  }
+}
