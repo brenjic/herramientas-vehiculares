@@ -36,6 +36,9 @@
     "fees",
     "misc",
     "target",
+    "soatCosto",
+    "catCosto",
+    "revisionCosto",
   ];
 
   const expenseFields = [
@@ -53,15 +56,24 @@
     "misc",
   ];
 
+  const documentFields = [
+    { status: "soatEstado", cost: "soatCosto" },
+    { status: "catEstado", cost: "catCosto" },
+    { status: "revisionEstado", cost: "revisionCosto" },
+  ];
+
   let currentUser = null;
   let operations = [];
   let loading = false;
+  let temporizadorNotificacion;
 
   function money(value) {
     return currency.format(Number(value) || 0);
   }
 
-  let temporizadorNotificacion;
+  function numberValue(id) {
+    return Math.max(0, Number($(id)?.value) || 0);
+  }
 
   function mostrarNotificacion(titulo, mensaje) {
     const notificacion = $("notificacion");
@@ -73,7 +85,6 @@
 
     $("notificacionTitulo").textContent = titulo;
     $("notificacionTexto").textContent = mensaje;
-
     notificacion.classList.add("visible");
 
     clearTimeout(temporizadorNotificacion);
@@ -81,10 +92,6 @@
     temporizadorNotificacion = setTimeout(() => {
       notificacion.classList.remove("visible");
     }, 3500);
-  }
-
-  function numberValue(id) {
-    return Math.max(0, Number($(id)?.value) || 0);
   }
 
   function readForm() {
@@ -106,42 +113,99 @@
     return data;
   }
 
-  function calculate() {
-    const buy = numberValue("buy");
-    const expenses = expenseFields.reduce(
-      (total, field) => total + numberValue(field),
+  // Calcula los gastos de documentos según su estado.
+  function documentExpenses(data) {
+    const result = {};
+
+    for (const field of documentFields) {
+      const estado = String(data[field.status] || "");
+      const costo = Math.max(0, Number(data[field.cost]) || 0);
+
+      const debePagar = ["Vencido", "Vencida", "No tiene"].includes(estado);
+
+      result[field.cost] = debePagar ? costo : 0;
+    }
+
+    // No cobrar SOAT y CAT simultáneamente.
+    // Si ambos aparecen como pendientes, se conserva el mayor
+    // importe estimado y se evita duplicar el gasto.
+    if (result.soatCosto > 0 && result.catCosto > 0) {
+      if (result.soatCosto >= result.catCosto) {
+        result.catCosto = 0;
+      } else {
+        result.soatCosto = 0;
+      }
+    }
+
+    return result;
+  }
+
+  function calculateForData(data) {
+    const docs = documentExpenses(data);
+
+    const regularExpenses = expenseFields.reduce(
+      (total, field) => total + Math.max(0, Number(data[field]) || 0),
       0,
     );
 
-    const investment = buy + expenses;
-    const estimatedSale = numberValue("sale");
-    const actualSale = numberValue("real");
+    const documentTotal = Object.values(docs).reduce(
+      (total, value) => total + value,
+      0,
+    );
+
+    const expenses = regularExpenses + documentTotal;
+    const investment = Math.max(0, Number(data.buy) || 0) + expenses;
+    const estimatedSale = Math.max(0, Number(data.sale) || 0);
+    const actualSale = Math.max(0, Number(data.real) || 0);
     const profit = estimatedSale - investment;
     const roi = investment > 0 ? (profit / investment) * 100 : 0;
-    const targetPrice = investment + numberValue("target");
+    const targetPrice = investment + Math.max(0, Number(data.target) || 0);
 
-    $("investment").textContent = money(investment);
-    $("expenses").textContent = money(expenses);
-    $("profit").textContent = money(profit);
-    $("roi").textContent = investment > 0 ? `${roi.toFixed(2)}%` : "—";
-    $("breakEven").textContent = money(investment);
-    $("targetPrice").textContent = money(targetPrice);
+    return {
+      docs,
+      expenses,
+      investment,
+      profit,
+      roi,
+      targetPrice,
+      actualProfit: actualSale > 0 ? actualSale - investment : null,
+    };
+  }
+
+  function calculate() {
+    const data = readForm();
+    const result = calculateForData(data);
+
+    $("investment").textContent = money(result.investment);
+    $("expenses").textContent = money(result.expenses);
+    $("profit").textContent = money(result.profit);
+    $("roi").textContent =
+      result.investment > 0 ? `${result.roi.toFixed(2)}%` : "—";
+
+    $("breakEven").textContent = money(result.investment);
+    $("targetPrice").textContent = money(result.targetPrice);
     $("realProfit").textContent =
-      actualSale > 0 ? money(actualSale - investment) : "Pendiente";
+      result.actualProfit !== null ? money(result.actualProfit) : "Pendiente";
 
-    $("profit").classList.toggle("negative", profit < 0);
+    $("profit").classList.toggle("negative", result.profit < 0);
     $("realProfit").classList.toggle(
       "negative",
-      actualSale > 0 && actualSale < investment,
+      result.actualProfit !== null && result.actualProfit < 0,
     );
   }
 
-  // Convierte una operación del formulario al formato de Supabase.
+  // Guarda gastos y documentos dentro de la columna JSONB "gastos".
+  // No requiere añadir columnas nuevas a la tabla de Supabase.
   function toDatabase(data) {
     const gastos = {};
 
     for (const field of expenseFields) {
       gastos[field] = Number(data[field]) || 0;
+    }
+
+    for (const field of documentFields) {
+      gastos[field.status] = data[field.status] || "Por verificar";
+      gastos[field.cost] = Math.max(0, Number(data[field.cost]) || 0);
     }
 
     return {
@@ -161,7 +225,6 @@
     };
   }
 
-  // Convierte una fila de Supabase al formato que usa la página.
   function fromDatabase(row) {
     const gastos = row.gastos || {};
 
@@ -170,13 +233,22 @@
       plate: row.placa || "",
       year: row.anio ?? "",
       km: row.kilometraje ?? "",
-      status: row.estado || "",
+      status: row.estado || "Evaluando",
       buy: Number(row.precio_compra) || 0,
       ask: Number(row.precio_publicado) || 0,
       sale: Number(row.precio_venta) || 0,
       real: Number(row.precio_venta_real) || 0,
       target: Number(row.ganancia_objetivo) || 0,
       notes: row.notas || "",
+
+      soatEstado: gastos.soatEstado || "Por verificar",
+      soatCosto: Number(gastos.soatCosto) || 100,
+
+      catEstado: gastos.catEstado || "No corresponde",
+      catCosto: Number(gastos.catCosto) || 100,
+
+      revisionEstado: gastos.revisionEstado || "Por verificar",
+      revisionCosto: Number(gastos.revisionCosto) || 90,
     };
 
     for (const field of expenseFields) {
@@ -202,16 +274,11 @@
   }
 
   function operationSummary(data) {
-    const expenses = expenseFields.reduce(
-      (total, field) => total + (Number(data[field]) || 0),
-      0,
-    );
-
-    const investment = (Number(data.buy) || 0) + expenses;
+    const result = calculateForData(data);
 
     return {
-      investment,
-      profit: (Number(data.sale) || 0) - investment,
+      investment: result.investment,
+      profit: result.profit,
     };
   }
 
@@ -219,6 +286,16 @@
     const td = document.createElement("td");
     td.textContent = value ?? "";
     return td;
+  }
+
+  function fillForm(data) {
+    for (const [key, value] of Object.entries(data)) {
+      const element = $(key);
+
+      if (element && element.type !== "file") {
+        element.value = value ?? "";
+      }
+    }
   }
 
   function renderTable() {
@@ -270,6 +347,7 @@
       const deleteButton = document.createElement("button");
       deleteButton.type = "button";
       deleteButton.textContent = "Eliminar";
+
       deleteButton.addEventListener("click", async () => {
         const modal = $("modalEliminar");
         const cancelar = $("cancelarEliminar");
@@ -327,14 +405,12 @@
         try {
           await loadOperations();
           renderTable();
-
           mostrarNotificacion(
             "¡Operación eliminada!",
             "La operación se eliminó correctamente de tu historial.",
           );
         } catch (err) {
           console.error(err);
-
           mostrarNotificacion(
             "Operación eliminada",
             "Se eliminó, pero no se pudo actualizar el historial.",
@@ -345,16 +421,6 @@
       actions.append(loadButton, deleteButton);
       tr.appendChild(actions);
       tableBody.appendChild(tr);
-    }
-  }
-
-  function fillForm(data) {
-    for (const [key, value] of Object.entries(data)) {
-      const element = $(key);
-
-      if (element && key !== "form" && element.type !== "file") {
-        element.value = value ?? "";
-      }
     }
   }
 
@@ -371,7 +437,36 @@
     URL.revokeObjectURL(url);
   }
 
+  function actualizarVisibilidadCostos() {
+    const documentos = [
+      { estado: "soatEstado", contenedor: "soatCostoContenedor" },
+      { estado: "catEstado", contenedor: "catCostoContenedor" },
+      { estado: "revisionEstado", contenedor: "revisionCostoContenedor" },
+    ];
+
+    for (const documento of documentos) {
+      const seleccion = $(documento.estado);
+      const contenedor = $(documento.contenedor);
+
+      if (!seleccion || !contenedor) continue;
+
+      const mostrar = ["Vencido", "Vencida", "No tiene"].includes(
+        seleccion.value,
+      );
+
+      contenedor.style.display = mostrar ? "" : "none";
+    }
+  }
+
   form.addEventListener("input", calculate);
+
+  form.addEventListener("change", () => {
+    actualizarVisibilidadCostos();
+    calculate();
+  });
+
+  // Mostrar u ocultar los costos al abrir la página.
+  actualizarVisibilidadCostos();
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -400,10 +495,12 @@
 
       await loadOperations();
       renderTable();
+
       mostrarNotificacion(
         "¡Operación guardada!",
         "Tu operación se guardó correctamente en tu cuenta.",
       );
+
       form.reset();
       calculate();
     } catch (error) {
@@ -441,12 +538,18 @@
       ["plate", "Placa"],
       ["year", "Año"],
       ["km", "Kilometraje"],
-      ["status", "Estado"],
+      ["status", "Estado de operación"],
       ["buy", "Precio de compra"],
       ["ask", "Precio publicado"],
       ["sale", "Venta estimada"],
       ["real", "Venta real"],
       ...expenseFields.map((field) => [field, field]),
+      ["soatEstado", "Estado SOAT"],
+      ["soatCosto", "Costo estimado SOAT"],
+      ["catEstado", "Estado CAT"],
+      ["catCosto", "Costo estimado CAT"],
+      ["revisionEstado", "Estado revisión técnica"],
+      ["revisionCosto", "Costo revisión técnica"],
       ["target", "Ganancia objetivo"],
       ["notes", "Notas"],
     ];
@@ -525,6 +628,7 @@
     } catch (error) {
       console.error("Error al importar:", error);
       alert(`No se pudo completar la importación: ${error.message}`);
+
       try {
         await loadOperations();
         renderTable();

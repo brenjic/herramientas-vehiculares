@@ -289,6 +289,69 @@
                 </div>
             </section>
 
+            <!-- DOCUMENTACIÓN Y SEGUROS -->
+
+            <!-- DOCUMENTACIÓN Y SEGUROS -->
+            <section class="panel">
+                <h2>3. Documentación y seguros</h2>
+                <p>El costo aparecerá únicamente cuando el documento esté vencido o no lo tengas.</p>
+
+                <div class="grid">
+                    <div class="field">
+                        <label for="soatEstado">SOAT</label>
+                        <select id="soatEstado" name="soatEstado">
+                            <option value="Vigente">Vigente</option>
+                            <option value="Vencido">Vencido</option>
+                            <option value="No tiene">No tiene</option>
+                            <option value="Por verificar">Por verificar</option>
+                        </select>
+
+                        <div id="soatCostoContenedor" style="display: none;">
+                            <label for="soatCosto">Costo estimado SOAT (S/)</label>
+                            <input id="soatCosto" name="soatCosto" type="number" min="0" step="0.01" value="100">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="catEstado">CAT</label>
+                        <select id="catEstado" name="catEstado">
+                            <option value="No corresponde">No corresponde</option>
+                            <option value="Vigente">Vigente</option>
+                            <option value="Vencido">Vencido</option>
+                            <option value="No tiene">No tiene</option>
+                            <option value="Por verificar">Por verificar</option>
+                        </select>
+
+                        <div id="catCostoContenedor" style="display: none;">
+                            <label for="catCosto">Costo estimado CAT (S/)</label>
+                            <input id="catCosto" name="catCosto" type="number" min="0" step="0.01" value="100">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="revisionEstado">Revisión técnica</label>
+                        <select id="revisionEstado" name="revisionEstado">
+                            <option value="Vigente">Vigente</option>
+                            <option value="Vencida">Vencida</option>
+                            <option value="No tiene">No tiene</option>
+                            <option value="No corresponde">No corresponde</option>
+                            <option value="Por verificar">Por verificar</option>
+                        </select>
+
+                        <div id="revisionCostoContenedor" style="display: none;">
+                            <label for="revisionCosto">Costo estimado revisión técnica (S/)</label>
+                            <input id="revisionCosto" name="revisionCosto" type="number" min="0" step="0.01" value="90">
+                        </div>
+                    </div>
+                </div>
+
+                <p class="field-help">
+                    Los importes son estimaciones editables. SOAT y CAT son coberturas
+                    distintas: verifica cuál corresponde al vehículo antes de calcular el gasto.
+                </p>
+            </section>
+
+
             <!-- 3. GASTOS -->
             <section class="panel">
                 <h2>3. Gastos de la operación</h2>
