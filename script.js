@@ -1,14 +1,10 @@
 (() => {
   "use strict";
 
-  // Pega aquí el enlace real de tu plantilla vehicular.
   const TEMPLATE_URL =
     "https://sites.google.com/view/revisionvehicular7?usp=sharing";
 
-  const STORAGE_KEY = "herramientasVehiculares_operaciones";
-
   const $ = (id) => document.getElementById(id);
-
   const form = $("form");
   const tableBody = $("rows");
   const searchInput = $("search");
@@ -57,6 +53,10 @@
     "misc",
   ];
 
+  let currentUser = null;
+  let operations = [];
+  let loading = false;
+
   function money(value) {
     return currency.format(Number(value) || 0);
   }
@@ -69,14 +69,8 @@
     const data = {};
 
     for (const element of form.elements) {
-      if (
-        !element.id ||
-        element.type === "file" ||
-        element.type === "submit" ||
-        element.type === "button"
-      ) {
+      if (!element.id || ["file", "submit", "button"].includes(element.type))
         continue;
-      }
 
       data[element.id] = element.value;
     }
@@ -120,33 +114,69 @@
     );
   }
 
-  function loadOperations() {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      const operations = saved ? JSON.parse(saved) : [];
-      return Array.isArray(operations) ? operations : [];
-    } catch (error) {
-      console.error("No se pudo leer el historial:", error);
-      return [];
+  // Convierte una operación del formulario al formato de Supabase.
+  function toDatabase(data) {
+    const gastos = {};
+
+    for (const field of expenseFields) {
+      gastos[field] = Number(data[field]) || 0;
     }
+
+    return {
+      usuario_id: currentUser.id,
+      modelo: String(data.vehicle || "").trim(),
+      placa: String(data.plate || "").trim() || null,
+      anio: Number(data.year) || null,
+      kilometraje: Number(data.km) || null,
+      estado: String(data.status || "").trim() || "Evaluando",
+      precio_compra: Number(data.buy) || 0,
+      precio_publicado: Number(data.ask) || 0,
+      precio_venta: Number(data.sale) || 0,
+      precio_venta_real: Number(data.real) || 0,
+      gastos,
+      ganancia_objetivo: Number(data.target) || 0,
+      notas: String(data.notes || "").trim() || null,
+    };
   }
 
-  function saveOperations(operations) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(operations));
-      return true;
-    } catch (error) {
-      alert("No se pudo guardar. Revisa el espacio disponible del navegador.");
-      console.error(error);
-      return false;
+  // Convierte una fila de Supabase al formato que usa la página.
+  function fromDatabase(row) {
+    const gastos = row.gastos || {};
+
+    const data = {
+      vehicle: row.modelo || "",
+      plate: row.placa || "",
+      year: row.anio ?? "",
+      km: row.kilometraje ?? "",
+      status: row.estado || "",
+      buy: Number(row.precio_compra) || 0,
+      ask: Number(row.precio_publicado) || 0,
+      sale: Number(row.precio_venta) || 0,
+      real: Number(row.precio_venta_real) || 0,
+      target: Number(row.ganancia_objetivo) || 0,
+      notes: row.notas || "",
+    };
+
+    for (const field of expenseFields) {
+      data[field] = Number(gastos[field]) || 0;
     }
+
+    return {
+      id: row.id,
+      savedAt: row.creado_en,
+      data,
+    };
   }
 
-  function createId() {
-    return (
-      globalThis.crypto?.randomUUID?.() ||
-      `${Date.now()}-${Math.random().toString(16).slice(2)}`
-    );
+  async function loadOperations() {
+    const { data, error } = await supabaseClient
+      .from("operaciones")
+      .select("*")
+      .order("creado_en", { ascending: false });
+
+    if (error) throw error;
+
+    operations = (data || []).map(fromDatabase);
   }
 
   function operationSummary(data) {
@@ -154,6 +184,7 @@
       (total, field) => total + (Number(data[field]) || 0),
       0,
     );
+
     const investment = (Number(data.buy) || 0) + expenses;
 
     return {
@@ -170,18 +201,16 @@
 
   function renderTable() {
     const query = (searchInput.value || "").trim().toLowerCase();
-    const operations = loadOperations();
-
     tableBody.replaceChildren();
 
     const filtered = operations.filter((operation) => {
-      const vehicle = String(operation.data?.vehicle || "").toLowerCase();
-      const plate = String(operation.data?.plate || "").toLowerCase();
+      const vehicle = String(operation.data.vehicle || "").toLowerCase();
+      const plate = String(operation.data.plate || "").toLowerCase();
 
       return vehicle.includes(query) || plate.includes(query);
     });
 
-    if (filtered.length === 0) {
+    if (!filtered.length) {
       const tr = document.createElement("tr");
       const td = makeCell(
         query
@@ -195,7 +224,7 @@
     }
 
     for (const operation of filtered) {
-      const data = operation.data || {};
+      const data = operation.data;
       const summary = operationSummary(data);
       const tr = document.createElement("tr");
 
@@ -219,18 +248,34 @@
       const deleteButton = document.createElement("button");
       deleteButton.type = "button";
       deleteButton.textContent = "Eliminar";
-      deleteButton.addEventListener("click", () => {
+      deleteButton.addEventListener("click", async () => {
         const confirmed = window.confirm(
           `¿Eliminar la operación "${data.vehicle || "Sin nombre"}" (${data.plate || "Sin placa"})?`,
         );
 
         if (!confirmed) return;
 
-        const updated = loadOperations().filter(
-          (item) => item.id !== operation.id,
-        );
+        deleteButton.disabled = true;
 
-        if (saveOperations(updated)) renderTable();
+        const { error } = await supabaseClient
+          .from("operaciones")
+          .delete()
+          .eq("id", operation.id);
+
+        if (error) {
+          console.error(error);
+          alert("No se pudo eliminar la operación. Revisa la conexión.");
+          deleteButton.disabled = false;
+          return;
+        }
+
+        try {
+          await loadOperations();
+          renderTable();
+        } catch (err) {
+          console.error(err);
+          alert("Se eliminó, pero no se pudo actualizar el historial.");
+        }
       });
 
       actions.append(loadButton, deleteButton);
@@ -242,16 +287,32 @@
   function fillForm(data) {
     for (const [key, value] of Object.entries(data)) {
       const element = $(key);
+
       if (element && key !== "form" && element.type !== "file") {
         element.value = value ?? "";
       }
     }
   }
 
+  function downloadFile(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
   form.addEventListener("input", calculate);
 
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
+
+    if (!currentUser || loading) return;
 
     const data = readForm();
 
@@ -261,25 +322,40 @@
       return;
     }
 
-    const operations = loadOperations();
-    operations.unshift({
-      id: createId(),
-      savedAt: new Date().toISOString(),
-      data,
-    });
+    loading = true;
+    const submitButton = form.querySelector('[type="submit"]');
 
-    if (saveOperations(operations)) {
+    if (submitButton) submitButton.disabled = true;
+
+    try {
+      const { error } = await supabaseClient
+        .from("operaciones")
+        .insert(toDatabase(data));
+
+      if (error) throw error;
+
+      await loadOperations();
       renderTable();
-      alert("Operación guardada en este navegador.");
+      alert("Operación guardada en tu cuenta de forma segura.");
+      form.reset();
+      calculate();
+    } catch (error) {
+      console.error("Error al guardar:", error);
+      alert(
+        "No se pudo guardar la operación. Comprueba la conexión y la configuración de Supabase.",
+      );
+    } finally {
+      loading = false;
+      if (submitButton) submitButton.disabled = false;
     }
   });
 
   $("clear").addEventListener("click", () => {
-    const confirmed = window.confirm(
-      "¿Limpiar el formulario? El historial guardado no se eliminará.",
-    );
-
-    if (!confirmed) return;
+    if (
+      !window.confirm("¿Limpiar el formulario? El historial no se eliminará.")
+    ) {
+      return;
+    }
 
     form.reset();
     calculate();
@@ -287,11 +363,8 @@
 
   searchInput.addEventListener("input", renderTable);
 
-  // Exportar el historial como CSV para abrirlo en Excel.
   $("csv").addEventListener("click", () => {
-    const operations = loadOperations();
-
-    if (operations.length === 0) {
+    if (!operations.length) {
       alert("No hay operaciones para exportar.");
       return;
     }
@@ -311,16 +384,12 @@
       ["notes", "Notas"],
     ];
 
-    function csvCell(value) {
-      let text = String(value ?? "");
-      text = text.replace(/"/g, '""');
-      return `"${text}"`;
-    }
+    const csvCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
 
     const lines = [
       columns.map((column) => csvCell(column[1])).join(","),
       ...operations.map((operation) =>
-        columns.map(([key]) => csvCell(operation.data?.[key])).join(","),
+        columns.map(([key]) => csvCell(operation.data[key])).join(","),
       ),
     ];
 
@@ -331,10 +400,7 @@
     );
   });
 
-  // Copia de seguridad completa en formato JSON.
   $("backup").addEventListener("click", () => {
-    const operations = loadOperations();
-
     downloadFile(
       JSON.stringify(operations, null, 2),
       "respaldo_vehicular.json",
@@ -342,9 +408,7 @@
     );
   });
 
-  $("import").addEventListener("click", () => {
-    importInput.click();
-  });
+  $("import").addEventListener("click", () => importInput.click());
 
   importInput.addEventListener("change", async () => {
     const file = importInput.files?.[0];
@@ -369,64 +433,72 @@
         throw new Error("El archivo no tiene el formato esperado.");
       }
 
-      const confirmed = window.confirm(
-        `Se importarán ${parsed.length} operaciones. ¿Deseas agregarlas al historial actual?`,
-      );
+      if (
+        !window.confirm(
+          `Se intentarán importar ${parsed.length} operaciones a tu cuenta. ¿Continuar?`,
+        )
+      )
+        return;
 
-      if (!confirmed) return;
+      for (const item of parsed) {
+        const data = item.data;
 
-      const current = loadOperations();
-      const existingIds = new Set(current.map((item) => item.id));
+        if (!String(data.vehicle || "").trim()) continue;
 
-      const imported = parsed.map((item) => ({
-        id: item.id && !existingIds.has(item.id) ? item.id : createId(),
-        savedAt: item.savedAt || new Date().toISOString(),
-        data: item.data,
-      }));
+        const { error } = await supabaseClient
+          .from("operaciones")
+          .insert(toDatabase(data));
 
-      if (saveOperations([...imported, ...current])) {
-        renderTable();
-        alert("Importación completada.");
+        if (error) throw error;
       }
+
+      await loadOperations();
+      renderTable();
+      alert("Importación completada.");
     } catch (error) {
-      alert(`No se pudo importar el archivo: ${error.message}`);
+      console.error("Error al importar:", error);
+      alert(`No se pudo completar la importación: ${error.message}`);
+      try {
+        await loadOperations();
+        renderTable();
+      } catch (reloadError) {
+        console.error(reloadError);
+      }
     } finally {
       importInput.value = "";
     }
   });
 
-  function downloadFile(content, filename, type) {
-    const blob = new Blob([content], { type });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-
-    URL.revokeObjectURL(url);
-  }
-
-  // Enlace de la plantilla: se configura cuando tengas su URL real.
   const templateLink = $("templateLink");
 
   if (templateLink) {
-    if (TEMPLATE_URL.trim()) {
-      templateLink.href = TEMPLATE_URL;
-      templateLink.target = "_blank";
-      templateLink.rel = "noopener noreferrer";
-    } else {
-      templateLink.addEventListener("click", (event) => {
-        event.preventDefault();
-        alert(
-          "Primero pega el enlace de tu plantilla en la constante TEMPLATE_URL de script.js.",
-        );
-      });
+    templateLink.href = TEMPLATE_URL;
+    templateLink.target = "_blank";
+    templateLink.rel = "noopener noreferrer";
+  }
+
+  async function initialize() {
+    try {
+      const { data, error } = await supabaseClient.auth.getSession();
+
+      if (error) throw error;
+
+      if (!data.session) {
+        window.location.replace("login.html");
+        return;
+      }
+
+      currentUser = data.session.user;
+
+      await loadOperations();
+      renderTable();
+      calculate();
+    } catch (error) {
+      console.error("Error al iniciar la calculadora:", error);
+      alert("No se pudo conectar con Supabase. Revisa tu configuración.");
     }
   }
 
   calculate();
-  renderTable();
+  initialize();
 })();
