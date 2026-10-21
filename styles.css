@@ -659,7 +659,7 @@ td button:hover {
     animation-iteration-count: 1 !important;
   }
 }
-```css
+
 /* Compra y venta: tarjetas visuales */
 .panel-compra-venta .section-description {
   color: #64748b;
@@ -720,4 +720,444 @@ td button:hover {
   .panel-compra-venta .price-card {
     padding: 13px;
   }
+}
+
+/* Panel de conversión de moneda */
+.currency-panel {
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid #dbe3ef;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.currency-panel h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: #1e3a8a;
+  font-size: 1.1rem;
+}
+
+.currency-panel .field {
+  margin-bottom: 14px;
+}
+
+#applyCurrency {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  background: #1e3a8a;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+#applyCurrency:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+#applyCurrency:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 3px;
+}
+
+#currencyMessage {
+  margin: 12px 0 0;
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* =========================================
+   MEJORA VISUAL: RESULTADOS FINANCIEROS
+   ========================================= */
+
+#resultados .metrics {
+  gap: 18px;
+  margin-top: 22px;
+}
+
+#resultados .metric {
+  padding: 22px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.035);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+#resultados .metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07);
+}
+
+#resultados .metric span {
+  margin-bottom: 12px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#resultados .metric strong {
+  color: #1e293b;
+  font-size: clamp(20px, 2.3vw, 27px);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  overflow-wrap: anywhere;
+}
+
+#resultados .metric strong.positive {
+  color: #15803d;
+}
+
+#resultados .metric strong.negative {
+  color: #b91c1c;
+}
+
+@media (max-width: 560px) {
+  #resultados .metric {
+    padding: 18px;
+  }
+}
+
+/* =========================================
+   MEJORA VISUAL: RESULTADOS FINANCIEROS
+   ========================================= */
+
+#resultados .metrics {
+  gap: 18px;
+  margin-top: 22px;
+}
+
+#resultados .metric {
+  padding: 22px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.035);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+#resultados .metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07);
+}
+
+#resultados .metric span {
+  margin-bottom: 12px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#resultados .metric strong {
+  color: #1e293b;
+  font-size: clamp(20px, 2.3vw, 27px);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  overflow-wrap: anywhere;
+}
+
+#resultados .metric strong.positive {
+  color: #15803d;
+}
+
+#resultados .metric strong.negative {
+  color: #b91c1c;
+}
+
+@media (max-width: 560px) {
+  #resultados .metric {
+    padding: 18px;
+  }
+}
+
+/* =========================================
+   MEJORA VISUAL: RESULTADOS FINANCIEROS
+   ========================================= */
+
+#resultados .metrics {
+  gap: 18px;
+  margin-top: 22px;
+}
+
+#resultados .metric {
+  padding: 22px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.035);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+#resultados .metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07);
+}
+
+#resultados .metric span {
+  margin-bottom: 12px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#resultados .metric strong {
+  color: #1e293b;
+  font-size: clamp(20px, 2.3vw, 27px);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  overflow-wrap: anywhere;
+}
+
+#resultados .metric strong.positive {
+  color: #15803d;
+}
+
+#resultados .metric strong.negative {
+  color: #b91c1c;
+}
+
+@media (max-width: 560px) {
+  #resultados .metric {
+    padding: 18px;
+  }
+}
+
+/* =========================================
+   MEJORA VISUAL: RESULTADOS FINANCIEROS
+   ========================================= */
+
+#resultados .metrics {
+  gap: 18px;
+  margin-top: 22px;
+}
+
+#resultados .metric {
+  padding: 22px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.035);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+#resultados .metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07);
+}
+
+#resultados .metric span {
+  margin-bottom: 12px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#resultados .metric strong {
+  color: #1e293b;
+  font-size: clamp(20px, 2.3vw, 27px);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  overflow-wrap: anywhere;
+}
+
+#resultados .metric strong.positive {
+  color: #15803d;
+}
+
+#resultados .metric strong.negative {
+  color: #b91c1c;
+}
+
+@media (max-width: 560px) {
+  #resultados .metric {
+    padding: 18px;
+  }
+}
+
+/* BOTÓN DE MODO OSCURO */
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+.theme-toggle:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+@media (max-width: 560px) {
+  .header-content {
+    flex-wrap: wrap;
+  }
+
+  .theme-toggle {
+    width: 100%;
+  }
+}
+
+/* =========================================
+   MODO OSCURO
+   ========================================= */
+
+html.dark-mode {
+  color-scheme: dark;
+}
+
+html.dark-mode body {
+  background: #15171c;
+  color: #e5e7eb;
+}
+
+html.dark-mode .panel,
+html.dark-mode .card,
+html.dark-mode .currency-panel,
+html.dark-mode .panel-compra-venta .price-card {
+  background: #20242c;
+  border-color: #373d48;
+  color: #e5e7eb;
+}
+
+html.dark-mode .panel h2,
+html.dark-mode .card h2,
+html.dark-mode .currency-panel h3 {
+  color: #f1c6ce;
+}
+
+html.dark-mode .panel p,
+html.dark-mode .card p,
+html.dark-mode .panel-compra-venta .section-description {
+  color: #b7bfcc;
+}
+
+html.dark-mode .field label,
+html.dark-mode .panel-compra-venta .price-card label {
+  color: #e5e7eb;
+}
+
+html.dark-mode .field input,
+html.dark-mode .field select,
+html.dark-mode .field textarea,
+html.dark-mode .tools input[type="search"] {
+  background: #171a21;
+  border-color: #454d5b;
+  color: #f3f4f6;
+}
+
+html.dark-mode .field input::placeholder,
+html.dark-mode .field textarea::placeholder {
+  color: #929baa;
+}
+
+html.dark-mode .metric {
+  background: #20242c;
+  border-color: #373d48;
+}
+
+html.dark-mode .metric span,
+html.dark-mode .help-text {
+  color: #b7bfcc;
+}
+
+html.dark-mode .metric strong {
+  color: #f1c6ce;
+}
+
+html.dark-mode .metric strong.positive {
+  color: #4ade80;
+}
+
+html.dark-mode .metric strong.negative {
+  color: #f87171;
+}
+
+html.dark-mode .table-wrapper,
+html.dark-mode table {
+  background: #20242c;
+  border-color: #373d48;
+}
+
+html.dark-mode tbody tr {
+  background: #20242c;
+  color: #e5e7eb;
+}
+
+html.dark-mode tbody tr:hover {
+  background: #2b303a;
+}
+
+html.dark-mode th,
+html.dark-mode td {
+  border-color: #373d48;
+}
+
+html.dark-mode td button,
+html.dark-mode .btn-secondary {
+  background: #303641;
+  border-color: #454d5b;
+  color: #f3f4f6;
+}
+
+html.dark-mode td button:hover,
+html.dark-mode .btn-secondary:hover {
+  background: #3b4350;
+}
+
+html.dark-mode .site-footer {
+  border-color: #373d48;
+  color: #b7bfcc;
+}
+
+html.dark-mode .field-help,
+html.dark-mode #currencyMessage {
+  color: #b7bfcc;
+}
+
+/* Ventanas de confirmación */
+
+html.dark-mode .modal-contenido {
+  background: #20242c;
+  color: #e5e7eb;
+}
+
+html.dark-mode .modal-contenido p {
+  color: #b7bfcc;
 }

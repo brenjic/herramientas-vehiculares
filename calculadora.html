@@ -161,6 +161,7 @@
 
 <body>
 
+
     <header class="site-header">
         <div class="container header-content">
             <div class="brand">
@@ -170,8 +171,14 @@
                     <p>Calculadora de compra y reventa</p>
                 </div>
             </div>
+
+            <button type="button" id="toggleTheme" class="theme-toggle" aria-label="Activar modo oscuro"
+                title="Cambiar tema">
+                🌙 <span>Modo oscuro</span>
+            </button>
         </div>
     </header>
+
 
     <main class="container">
 
@@ -253,6 +260,37 @@
                 <p class="section-description">
                     💡 Compara el precio que pide el vendedor con tu inversión y el precio al que planeas revender.
                 </p>
+
+                <div class="currency-panel">
+                    <h3>💱 Conversión de moneda</h3>
+
+                    <div class="field">
+                        <label for="currencyMode">Moneda de los precios</label>
+                        <select id="currencyMode">
+                            <option value="PEN">Soles (S/)</option>
+                            <option value="USD">Dólares (US$)</option>
+                        </select>
+                        <small class="field-help">
+                            Si el vehículo está publicado en dólares, selecciona US$.
+                        </small>
+                    </div>
+
+                    <div class="field" id="exchangeRateBox" hidden>
+                        <label for="exchangeRate">Tipo de cambio (S/ por dólar)</label>
+                        <input id="exchangeRate" type="number" min="0.01" step="0.001" value="3.45">
+                        <small class="field-help">
+                            Introduce el valor del dólar que deseas utilizar.
+                        </small>
+                    </div>
+
+
+                    <button type="button" id="applyCurrency" class="btn btn-primary">
+                        <span aria-hidden="true">⇄</span>
+                        Aplicar conversión
+                    </button>
+
+                    <p id="currencyMessage" aria-live="polite"></p>
+                </div>
 
                 <div class="grid">
 
@@ -586,6 +624,14 @@
                 <input id="search" type="search" placeholder="Buscar por vehículo o placa..."
                     aria-label="Buscar por vehículo o placa">
 
+                <button class="btn btn-secondary" type="button" id="pdfSelected">
+                    Descargar seleccionados (PDF)
+                </button>
+
+                <button class="btn btn-primary" type="button" id="pdfAll">
+                    Descargar todo (PDF)
+                </button>
+
                 <button class="btn btn-secondary" type="button" id="csv">
                     Exportar CSV
                 </button>
@@ -605,6 +651,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th>Seleccionar</th>
                             <th>Vehículo</th>
                             <th>Placa</th>
                             <th>Compra</th>
@@ -615,7 +662,7 @@
                     </thead>
                     <tbody id="rows">
                         <tr>
-                            <td colspan="6">Cargando operaciones...</td>
+                            <td colspan="7">Cargando operaciones...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -631,6 +678,7 @@
 
     <!-- Conexión con Supabase y JavaScript existente -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="supabase-config.js"></script>
     <script src="script.js"></script>
 
