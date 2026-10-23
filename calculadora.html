@@ -1,723 +1,1758 @@
 <!DOCTYPE html>
+
 <html lang="es">
 
+
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Calculadora de Reventa | Herramientas Vehiculares</title>
+
     <link rel="stylesheet" href="styles.css">
 
+
+
     <style>
-        /* Descripciones debajo de los campos */
         .field-help {
+
             display: block;
+
             margin-top: 5px;
+
             color: #64748b;
+
             font-size: 12px;
+
             line-height: 1.5;
+
         }
 
-        /* Notificaciones */
+
+
         .notificacion {
+
             position: fixed;
+
             top: 20px;
+
             right: 20px;
+
             z-index: 9999;
+
             display: flex;
+
             align-items: center;
+
             gap: 12px;
+
             width: min(360px, calc(100vw - 40px));
+
             padding: 16px;
+
             background: #ffffff;
+
             border: 1px solid #bbf7d0;
+
             border-left: 5px solid #16a34a;
+
             border-radius: 12px;
+
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+
             color: #166534;
+
             font-family: Arial, sans-serif;
+
             opacity: 0;
+
             transform: translateY(-12px);
+
             pointer-events: none;
+
             transition: opacity 0.25s ease, transform 0.25s ease;
+
         }
+
+
 
         .notificacion.visible {
+
             opacity: 1;
+
             transform: translateY(0);
+
         }
+
+
 
         .notificacion-icono {
+
             font-size: 26px;
+
         }
+
+
 
         .notificacion strong {
+
             display: block;
+
             margin-bottom: 4px;
+
             font-size: 15px;
+
         }
+
+
 
         .notificacion p {
+
             margin: 0;
+
             color: #475569;
+
             font-size: 13px;
+
             line-height: 1.4;
+
         }
 
-        /* Ventana de confirmación */
+
+
         .modal-confirmacion {
+
             display: none;
+
             position: fixed;
+
             inset: 0;
+
             z-index: 10000;
+
             background: rgba(15, 23, 42, 0.55);
+
             backdrop-filter: blur(4px);
+
             align-items: center;
+
             justify-content: center;
+
             padding: 20px;
+
         }
+
+
 
         .modal-confirmacion.visible {
+
             display: flex;
+
         }
+
+
 
         .modal-contenido {
+
             width: 100%;
+
             max-width: 380px;
+
             padding: 28px;
+
             background: #fff;
+
             color: #0f172a;
+
             border-radius: 18px;
+
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+
             text-align: center;
+
             font-family: Arial, sans-serif;
+
             animation: aparecerModal 0.2s ease;
+
         }
+
+
 
         .modal-icono {
+
             width: 64px;
+
             height: 64px;
+
             margin: 0 auto 16px;
+
             display: grid;
+
             place-items: center;
+
             border-radius: 50%;
+
             background: #fee2e2;
+
             font-size: 30px;
+
         }
+
+
 
         .modal-contenido h2 {
+
             margin: 0 0 10px;
+
             font-size: 22px;
+
         }
+
+
 
         .modal-contenido p {
+
             margin: 0 0 24px;
+
             color: #64748b;
+
             font-size: 14px;
+
             line-height: 1.6;
+
         }
+
+
 
         .modal-botones {
+
             display: flex;
+
             gap: 10px;
+
         }
+
+
 
         .modal-botones button {
+
             flex: 1;
+
             padding: 12px 10px;
+
             border: 0;
+
             border-radius: 10px;
+
             cursor: pointer;
+
             font-weight: 600;
+
             font-size: 14px;
+
         }
+
+
 
         #cancelarEliminar {
+
             background: #e2e8f0;
+
             color: #334155;
+
         }
+
+
 
         #confirmarEliminar {
+
             background: #dc2626;
+
             color: white;
+
         }
+
+
 
         #confirmarEliminar:hover {
+
             background: #b91c1c;
+
         }
+
+
 
         @keyframes aparecerModal {
+
             from {
+
                 opacity: 0;
+
                 transform: translateY(8px) scale(0.98);
+
             }
 
+
+
             to {
+
                 opacity: 1;
+
                 transform: translateY(0) scale(1);
+
             }
+
         }
     </style>
+
 </head>
+
+
 
 <body>
 
 
+
     <header class="site-header">
+
         <div class="container header-content">
+
             <div class="brand">
+
                 <span class="brand-icon">🚘</span>
+
                 <div>
+
                     <h1>Herramientas Vehiculares</h1>
+
                     <p>Calculadora de compra y reventa</p>
+
                 </div>
+
             </div>
+
+
 
             <button type="button" id="toggleTheme" class="theme-toggle" aria-label="Activar modo oscuro"
                 title="Cambiar tema">
+
                 🌙 <span>Modo oscuro</span>
+
             </button>
+
         </div>
+
     </header>
+
 
 
     <main class="container">
 
+
+
         <nav class="back-navigation">
+
             <a class="btn btn-secondary" href="index.html">
+
                 ← Volver al menú
+
             </a>
+
         </nav>
 
+
+
         <section class="hero">
+
             <p class="eyebrow">ANÁLISIS DE RENTABILIDAD</p>
+
             <h2>Calculadora de reventa vehicular</h2>
+
             <p>
+
                 Registra el vehículo, añade los gastos y calcula
+
                 la rentabilidad de tu operación.
+
             </p>
+
         </section>
+
+
 
         <form id="form">
 
-            <!-- 1. DATOS DEL VEHÍCULO -->
-            <section class="panel">
-                <h2>1. Datos del vehículo</h2>
+
+
+            <!--*&#x20;1. DATOS DEL VEHÍCULO&#x20;*-->
+
+            <section class="panel tab-panel" data-tab-panel="datos">
+
+                <h2>Datos del vehículo</h2>
+
+
 
                 <div class="grid">
 
-                    <div class="field">
-                        <label for="vehicle">Vehículo / modelo</label>
-                        <input id="vehicle" name="vehicle" type="text" placeholder="Ej. Suzuki SX-4" required>
-                        <small class="field-help">
-                            Ingresa la marca y el modelo del vehículo.
-                        </small>
-                    </div>
+
 
                     <div class="field">
+
+                        <label for="make">Marca</label>
+
+                        <input id="make" name="make" list="marcasVehiculos" placeholder="Ej. Toyota" autocomplete="off">
+
+                        <datalist id="marcasVehiculos">
+
+                            <option value="Toyota">
+
+                            <option value="Hyundai">
+
+                            <option value="Kia">
+
+                            <option value="Nissan">
+
+                            <option value="Chevrolet">
+
+                            <option value="Suzuki">
+
+                            <option value="Honda">
+
+                            <option value="Mazda">
+
+                            <option value="Mitsubishi">
+
+                            <option value="Volkswagen">
+
+                            <option value="Ford">
+
+                            <option value="BMW">
+
+                            <option value="Mercedes-Benz">
+
+                            <option value="Audi">
+
+                            <option value="Jeep">
+
+                            <option value="Renault">
+
+                            <option value="Peugeot">
+
+                            <option value="Subaru">
+
+                            <option value="Chery">
+
+                            <option value="JAC">
+
+                            <option value="Great Wall">
+
+                            <option value="BYD">
+
+                            <option value="Tesla">
+
+                            <option value="Otra">
+
+                        </datalist>
+
+                        <small class="field-help">Puedes elegir una marca o escribir otra.</small>
+
+                    </div>
+
+
+
+                    <div class="field">
+
+                        <label for="vehicle">Modelo</label>
+
+                        <input id="vehicle" name="vehicle" list="modelosVehiculos" type="text" placeholder="Ej. Corolla"
+                            autocomplete="off">
+
+                        <datalist id="modelosVehiculos"></datalist>
+
+                        <small class="field-help">Los modelos sugeridos cambian según la marca; también puedes escribir
+
+                            uno.</small>
+
+                    </div>
+
+
+
+                    <div class="field">
+
+                        <label for="version">Versión</label>
+
+                        <select id="version" name="version">
+
+                            <option value="">Seleccionar versión</option>
+
+                            <option>BASE</option>
+
+                            <option>SEMIFULL</option>
+
+                            <option>FULL</option>
+
+                            <option>SPORT</option>
+
+                            <option>PLUS</option>
+
+                            <option>TOPE DE GAMA</option>
+
+                            <option>ELÉCTRICA</option>
+
+                            <option>Otra</option>
+
+                        </select>
+
+                    </div>
+
+
+
+                    <div class="field">
+
+                        <label for="modelYear">Año modelo</label>
+
+                        <input id="modelYear" name="modelYear" type="number" min="1900" max="2100"
+                            placeholder="Ej. 2019">
+
+                        <small class="field-help">Puede ser distinto del año de fabricación.</small>
+
+                    </div>
+
+
+
+                    <div class="field">
+                        <label for="color">Color</label>
+                        <input id="color" name="color" type="text" list="coloresVehiculo"
+                            placeholder="Escribe o selecciona un color" autocomplete="off">
+
+                        <datalist id="coloresVehiculo">
+                            <option value="Blanco">
+                            <option value="Negro">
+                            <option value="Plata">
+                            <option value="Gris">
+                            <option value="Rojo">
+                            <option value="Azul">
+                            <option value="Verde">
+                            <option value="Amarillo">
+                            <option value="Marrón">
+                            <option value="Naranja">
+                            <option value="Dorado">
+                            <option value="Beige">
+                            <option value="Granate">
+                            <option value="Celeste">
+                            <option value="Morado">
+                            <option value="Perla">
+                            <option value="Otro">
+                        </datalist>
+                    </div>
+
+
+
+                    <div class="field">
+
+                        <label for="transmission">Transmisión</label>
+
+                        <select id="transmission" name="transmission">
+
+                            <option value="">Seleccionar transmisión</option>
+
+                            <option>Mecánica</option>
+
+                            <option>Automática</option>
+
+                            <option>CVT</option>
+
+                            <option>Otra</option>
+
+                        </select>
+
+                    </div>
+
+
+
+                    <div class="field">
+                        <label for="fuelType">Combustible</label>
+                        <select id="fuelType" name="fuelType">
+                            <option value="">Seleccionar combustible</option>
+                            <option>Gasolina</option>
+                            <option>Diésel</option>
+                            <option>GLP</option>
+                            <option>GNV</option>
+                            <option>Dual gasolina-GLP</option>
+                            <option>Dual gasolina-GNV</option>
+                            <option>Híbrido</option>
+                            <option>Eléctrico</option>
+                            <option>Otro</option>
+                        </select>
+                    </div>
+
+
+                    <div class="field">
+
+                        <label for="location">Ubicación</label>
+
+                        <input id="location" name="location" type="text" placeholder="Ej. Moquegua">
+
+                    </div>
+
+
+
+                    <div class="field">
+
                         <label for="plate">Placa</label>
+
                         <input id="plate" name="plate" type="text" placeholder="Ej. A7K-029">
+
                         <small class="field-help">
+
                             Escribe la placa de matrícula del vehículo.
+
                         </small>
+
                     </div>
 
+
+
                     <div class="field">
-                        <label for="year">Año</label>
+
+                        <label for="year">Año de fabricación</label>
+
                         <input id="year" name="year" type="number" min="1900" max="2100" placeholder="Ej. 2018">
+
                         <small class="field-help">
+
                             Indica el año de fabricación del vehículo.
+
                         </small>
+
                     </div>
 
+
+
                     <div class="field">
+
                         <label for="km">Kilometraje</label>
+
                         <input id="km" name="km" type="number" min="0" placeholder="Ej. 85000">
+
                         <small class="field-help">
+
                             Registra los kilómetros que marca el odómetro.
+
                         </small>
+
                     </div>
 
+
+
                     <div class="field">
+
                         <label for="status">Estado de la operación</label>
+
                         <select id="status" name="status">
+
                             <option value="Evaluando">Evaluando</option>
+
                             <option value="Comprado">Comprado</option>
+
                             <option value="En reparación">En reparación</option>
+
                             <option value="Publicado">Publicado para venta</option>
+
                             <option value="Vendido">Vendido</option>
+
                         </select>
+
                         <small class="field-help">
+
                             Selecciona la etapa actual de la compra o venta.
+
                         </small>
+
                     </div>
 
+
+
                 </div>
+
+
+
+                <div id="annualUseCard" class="annual-use-card" aria-live="polite">
+
+                    <strong>Uso anual estimado</strong>
+
+                    <span id="annualUseValue">Completa el año de fabricación y el kilometraje.</span>
+
+                    <small id="annualUseHelp">Es una referencia aproximada y no determina el estado mecánico.</small>
+
+                </div>
+
             </section>
 
-            <!-- 2. COMPRA Y VENTA -->
-            <section class="panel panel-compra-venta">
-                <h2>2. Compra y venta</h2>
-                <p class="section-description">
-                    💡 Compara el precio que pide el vendedor con tu inversión y el precio al que planeas revender.
-                </p>
-
-                <div class="currency-panel">
-                    <h3>💱 Conversión de moneda</h3>
-
-                    <div class="field">
-                        <label for="currencyMode">Moneda de los precios</label>
-                        <select id="currencyMode">
-                            <option value="PEN">Soles (S/)</option>
-                            <option value="USD">Dólares (US$)</option>
-                        </select>
-                        <small class="field-help">
-                            Si el vehículo está publicado en dólares, selecciona US$.
-                        </small>
-                    </div>
-
-                    <div class="field" id="exchangeRateBox" hidden>
-                        <label for="exchangeRate">Tipo de cambio (S/ por dólar)</label>
-                        <input id="exchangeRate" type="number" min="0.01" step="0.001" value="3.45">
-                        <small class="field-help">
-                            Introduce el valor del dólar que deseas utilizar.
-                        </small>
-                    </div>
 
 
-                    <button type="button" id="applyCurrency" class="btn btn-primary">
-                        <span aria-hidden="true">⇄</span>
-                        Aplicar conversión
-                    </button>
+            <!--*&#x20;2. COMPRA Y VENTA&#x20;*-->
 
-                    <p id="currencyMessage" aria-live="polite"></p>
-                </div>
-
+            <section class="panel panel-compra-venta tab-panel" data-tab-panel="gastos">
+                <h2>Tu RENTABILIDAD</h2>
+                <p class="section-description">Compara lo que pide el vendedor, tu oferta y el precio promedio del
+                    mercado para estimar cuánto puedes ganar.</p>
                 <div class="grid">
-
                     <div class="field price-card price-original">
-                        <label for="sellerAsk">
-                            🏷️ Precio del anuncio original (S/)
-                        </label>
-                        <input id="sellerAsk" name="sellerAsk" type="number" min="0" step="0.01" value="20000">
-                        <small class="field-help">
-                            El precio que pide el vendedor en su anuncio.
-                        </small>
+                        <label for="sellerAsk">🏷️ Precio publicado por el vendedor (S/)</label>
+                        <input id="sellerAsk" name="sellerAsk" type="number" min="0" step="0.01" value="0">
+                        <small class="field-help">El precio que aparece en el anuncio original del vendedor.</small>
                     </div>
-
                     <div class="field price-card price-buy">
-                        <label for="buy">
-                            🤝 Mi precio de compra (S/)
-                        </label>
-                        <input id="buy" name="buy" type="number" min="0" step="0.01" value="18000">
-                        <small class="field-help">
-                            Lo que planeas negociar y pagar por el vehículo.
-                        </small>
+                        <label for="buy">🤝 Tu oferta (S/)</label>
+                        <input id="buy" name="buy" type="number" min="0" step="0.01" value="0">
+                        <small class="field-help">Lo que ofrecerás pagar después de negociar.</small>
                     </div>
-
-                    <div class="field price-card price-publish">
-                        <label for="ask">
-                            🚘 Mi precio de publicación (S/)
-                        </label>
-                        <input id="ask" name="ask" type="number" min="0" step="0.01" value="23000">
-                        <small class="field-help">
-                            El precio al que anunciarás el vehículo para venderlo.
-                        </small>
+                </div>
+                <div class="profit-total-card" aria-live="polite">
+                    <span>GASTO TOTAL</span>
+                    <strong id="gastoTotalVista">S/ 0.00</strong>
+                    <small>Tu oferta + gastos de operación + deudas y documentos pendientes del filtro
+                        vehicular.</small>
+                </div>
+                <div class="grid market-price-grid">
+                    <div class="field price-card">
+                        <label for="marketFiltro">🔎 Precio de mercado según Filtro Vehicular (S/)</label>
+                        <input id="marketFiltro" name="marketFiltro" type="number" min="0" step="0.01" value="0">
                     </div>
-
-                    <div class="field price-card price-estimated">
-                        <label for="sale">
-                            📊 Precio de venta estimado (S/)
-                        </label>
-                        <input id="sale" name="sale" type="number" min="0" step="0.01" value="22500">
-                        <small class="field-help">
-                            Lo que esperas recibir después de negociar con el comprador.
-                        </small>
+                    <div class="field price-card">
+                        <label for="marketMarketplace">🛒 Precio de mercado según Marketplace (S/)</label>
+                        <input id="marketMarketplace" name="marketMarketplace" type="number" min="0" step="0.01"
+                            value="0">
                     </div>
-
+                </div>
+                <div class="market-average-card" aria-live="polite">
+                    <span>PRECIO DE MERCADO PROMEDIO</span>
+                    <strong id="marketAverageDisplay">Ingresa ambos precios</strong>
+                    <small>Se calcula promediando los dos importes.</small>
+                </div>
+                <div class="rentabilidad-results">
+                    <div class="rentabilidad-result">
+                        <span>Ganancia estimada</span>
+                        <strong id="rentabilidadMonto">S/ 0.00</strong>
+                    </div>
+                    <div class="rentabilidad-result">
+                        <span>Rentabilidad (ROI)</span>
+                        <strong id="rentabilidadPorcentaje">—</strong>
+                    </div>
+                </div>
+                <div class="grid actual-sale-grid">
                     <div class="field price-card price-real">
-                        <label for="real">
-                            ✅ Precio de venta real (S/)
-                        </label>
+                        <label for="real">✅ Precio de venta real (S/)</label>
                         <input id="real" name="real" type="number" min="0" step="0.01" value="0">
-                        <small class="field-help">
-                            Completa este importe cuando hayas vendido el vehículo.
-                        </small>
+                        <small class="field-help">Completa este importe cuando hayas vendido el vehículo; se calculará
+                            la ganancia real.</small>
                     </div>
-
                 </div>
+                <input id="ask" name="ask" type="hidden" value="0">
+                <input id="sale" name="sale" type="hidden" value="0">
             </section>
 
 
-            <!-- DOCUMENTACIÓN Y SEGUROS -->
 
-            <!-- DOCUMENTACIÓN Y SEGUROS -->
-            <section class="panel">
-                <h2>3. Documentación y seguros</h2>
-                <p>El costo aparecerá únicamente cuando el documento esté vencido o no lo tengas.</p>
+            <!--*&#x20;3. FILTRO VEHICULAR&#x20;*-->
 
-                <div class="grid">
-                    <div class="field">
-                        <label for="soatEstado">SOAT</label>
-                        <select id="soatEstado" name="soatEstado">
-                            <option value="Vigente">Vigente</option>
-                            <option value="Vencido">Vencido</option>
-                            <option value="No tiene">No tiene</option>
-                            <option value="Por verificar">Por verificar</option>
-                        </select>
+            <section class="panel tab-panel" data-tab-panel="filtro">
 
-                        <div id="soatCostoContenedor" style="display: none;">
-                            <label for="soatCosto">Costo estimado SOAT (S/)</label>
-                            <input id="soatCosto" name="soatCosto" type="number" min="0" step="0.01" value="100">
-                        </div>
-                    </div>
+                <h2>Filtro vehicular</h2>
 
-                    <div class="field">
-                        <label for="catEstado">CAT</label>
-                        <select id="catEstado" name="catEstado">
-                            <option value="No corresponde">No corresponde</option>
-                            <option value="Vigente">Vigente</option>
-                            <option value="Vencido">Vencido</option>
-                            <option value="No tiene">No tiene</option>
-                            <option value="Por verificar">Por verificar</option>
-                        </select>
+                <p>
 
-                        <div id="catCostoContenedor" style="display: none;">
-                            <label for="catCosto">Costo estimado CAT (S/)</label>
-                            <input id="catCosto" name="catCosto" type="number" min="0" step="0.01" value="100">
-                        </div>
-                    </div>
+                    Consulta y registra las deudas por municipalidad/entidad y la verificación de documentos del
 
-                    <div class="field">
-                        <label for="revisionEstado">Revisión técnica</label>
-                        <select id="revisionEstado" name="revisionEstado">
-                            <option value="Vigente">Vigente</option>
-                            <option value="Vencida">Vencida</option>
-                            <option value="No tiene">No tiene</option>
-                            <option value="No corresponde">No corresponde</option>
-                            <option value="Por verificar">Por verificar</option>
-                        </select>
+                    vehículo.
 
-                        <div id="revisionCostoContenedor" style="display: none;">
-                            <label for="revisionCosto">Costo estimado revisión técnica (S/)</label>
-                            <input id="revisionCosto" name="revisionCosto" type="number" min="0" step="0.01" value="90">
-                        </div>
-                    </div>
-                </div>
-
-                <p class="field-help">
-                    Los importes son estimaciones editables. SOAT y CAT son coberturas
-                    distintas: verifica cuál corresponde al vehículo antes de calcular el gasto.
                 </p>
-            </section>
 
 
-            <!-- 3. GASTOS -->
-            <section class="panel">
-                <h2>3. Gastos de la operación</h2>
-                <p>Si no tienes un gasto, déjalo en cero.</p>
 
-                <div class="grid">
+                <!--*&#x20;Estado Legal y Propietarios&#x20;*-->
+
+                <h3
+                    style="margin-top:20px; margin-bottom:15px; font-size:16px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+
+                    Estado Legal y Propietarios</h3>
+
+
+
+                <div class="grid" style="margin-bottom: 20px;">
 
                     <div class="field">
-                        <label for="repairs">Reparaciones (S/)</label>
-                        <input id="repairs" name="repairs" type="number" min="0" step="0.01" value="0">
-                        <small class="field-help">
-                            Registra el costo de repuestos y arreglos mecánicos.
-                        </small>
+
+                        <label for="duenosAnteriores">Dueños anteriores</label>
+
+                        <input id="duenosAnteriores" name="duenosAnteriores" type="number" min="0"
+                            placeholder="Ej. 1, 2, 3..." value="1">
+
+                        <small class="field-help">Número de propietarios registrados previamente.</small>
+
                     </div>
 
-                    <div class="field">
-                        <label for="paperwork">Trámites y transferencia (S/)</label>
-                        <input id="paperwork" name="paperwork" type="number" min="0" step="0.01" value="0">
-                        <small class="field-help">
-                            Ingresa los gastos de documentación y transferencia.
-                        </small>
-                    </div>
+
 
                     <div class="field">
-                        <label for="cleaning">Lavado y limpieza (S/)</label>
-                        <input id="cleaning" name="cleaning" type="number" min="0" step="0.01" value="0">
-                        <small class="field-help">
-                            Indica el costo de limpieza y acondicionamiento.
-                        </small>
-                    </div>
 
-                    <div class="field">
-                        <label for="fuel">Combustible (S/)</label>
-                        <input id="fuel" name="fuel" type="number" min="0" step="0.01" value="0">
-                        <small class="field-help">
-                            Registra el gasto de combustible durante la operación.
-                        </small>
-                    </div>
+                        <label for="ordenCaptura">Orden de captura policial (Requisitoria)</label>
 
-                    <div class="field">
-                        <label for="storage">Estacionamiento (S/)</label>
-                        <input id="storage" name="storage" type="number" min="0" step="0.01" value="0">
-                        <small class="field-help">
-                            Ingresa los costos de cochera o estacionamiento.
-                        </small>
-                    </div>
+                        <select id="ordenCaptura" name="ordenCaptura">
 
-                    <div class="field">
-                        <label for="sat">SAT (S/)</label>
-                        <input id="sat" name="sat" type="number" min="0" step="0.01" value="0">
-                        <small class="field-help">
-                            Registra los pagos o deudas municipales que correspondan.
-                        </small>
-                    </div>
+                            <option value="No">No</option>
 
-                    <div class="field">
-                        <label for="atu">ATU (S/)</label>
-                        <input id="atu" name="atu" type="number" min="0" step="0.01" value="0">
-                        <small class="field-help">
-                            Ingresa los costos o deudas de transporte que correspondan.
-                        </small>
-                    </div>
+                            <option value="Sí">Sí</option>
 
-                    <div class="field">
-                        <label for="sutran">SUTRAN (S/)</label>
-                        <input id="sutran" name="sutran" type="number" min="0" step="0.01" value="0">
-                        <small class="field-help">
-                            Registra las multas o pagos correspondientes a SUTRAN.
-                        </small>
-                    </div>
+                            <option value="Por verificar">Por verificar</option>
 
-                    <div class="field">
-                        <label for="fines">Multas (S/)</label>
-                        <input id="fines" name="fines" type="number" min="0" step="0.01" value="0">
-                        <small class="field-help">
-                            Ingresa otras multas que debas considerar en la operación.
-                        </small>
-                    </div>
+                        </select>
 
-                    <div class="field">
-                        <label for="liens">Gravámenes y deudas (S/)</label>
-                        <input id="liens" name="liens" type="number" min="0" step="0.01" value="0">
-                        <small class="field-help">
-                            Registra los importes que asumirás para resolver cargas o deudas.
-                        </small>
-                    </div>
+                        <small class="field-help">Indica si el vehículo registra requisitoria o captura
 
-                    <div class="field">
-                        <label for="fees">Comisiones (S/)</label>
-                        <input id="fees" name="fees" type="number" min="0" step="0.01" value="0">
-                        <small class="field-help">
-                            Indica los pagos a intermediarios u otros servicios.
-                        </small>
-                    </div>
+                            policial.</small>
 
-                    <div class="field">
-                        <label for="misc">Otros gastos (S/)</label>
-                        <input id="misc" name="misc" type="number" min="0" step="0.01" value="0">
-                        <small class="field-help">
-                            Registra cualquier costo adicional de la operación.
-                        </small>
-                    </div>
-
-                    <div class="field">
-                        <label for="target">Ganancia objetivo (S/)</label>
-                        <input id="target" name="target" type="number" min="0" step="0.01" value="3000">
-                        <small class="field-help">
-                            Indica cuánto dinero deseas ganar con la venta.
-                        </small>
                     </div>
 
                 </div>
 
+
+
+                <!--*&#x20;Deudas por Entidad / SAT&#x20;*-->
+
+                <h3
+                    style="margin-top:25px; margin-bottom:15px; font-size:16px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+
+                    Deudas por Entidad / SAT</h3>
+
+                <div class="sat-grid">
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge">LIMA</span>
+
+                            <label for="deuda-sat-lima">SAT de Lima</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-sat-lima" name="deuda-sat-lima" type="number" min="0" step="0.01"
+                                placeholder="0.00" value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge sutran">SUTRAN</span>
+
+                            <label for="deuda-sutran">SUTRAN</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-sutran" name="deuda-sutran" type="number" min="0" step="0.01"
+                                placeholder="0.00" value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge callao">CALLAO</span>
+
+                            <label for="deuda-callao">Municipalidad del Callao</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-callao" name="deuda-callao" type="number" min="0" step="0.01"
+                                placeholder="0.00" value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge atu">ATU</span>
+
+                            <label for="deuda-atu">ATU</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-atu" name="deuda-atu" type="number" min="0" step="0.01" placeholder="0.00"
+                                value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge gnv">GNV</span>
+
+                            <label for="deuda-infogas">Info Gas / GNV</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-infogas" name="deuda-infogas" type="number" min="0" step="0.01"
+                                placeholder="0.00" value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge cuzco">CUZCO</span>
+
+                            <label for="deuda-cuzco">SAT Cuzco</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-cuzco" name="deuda-cuzco" type="number" min="0" step="0.01"
+                                placeholder="0.00" value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge pucallpa">PUCALLPA</span>
+
+                            <label for="deuda-pucallpa">SAT Pucallpa</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-pucallpa" name="deuda-pucallpa" type="number" min="0" step="0.01"
+                                placeholder="0.00" value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge huanuco">HUÁNUCO</span>
+
+                            <label for="deuda-huanuco">SAT Huánuco</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-huanuco" name="deuda-huanuco" type="number" min="0" step="0.01"
+                                placeholder="0.00" value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge tarapoto">TARAPOTO</span>
+
+                            <label for="deuda-tarapoto">SAT Tarapoto</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-tarapoto" name="deuda-tarapoto" type="number" min="0" step="0.01"
+                                placeholder="0.00" value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge trujillo">TRUJILLO</span>
+
+                            <label for="deuda-trujillo">SAT Trujillo</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-trujillo" name="deuda-trujillo" type="number" min="0" step="0.01"
+                                placeholder="0.00" value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge cajamarca">CAJAMARCA</span>
+
+                            <label for="deuda-cajamarca">SAT Cajamarca</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-cajamarca" name="deuda-cajamarca" type="number" min="0" step="0.01"
+                                placeholder="0.00" value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge arequipa">AREQUIPA</span>
+
+                            <label for="deuda-arequipa">SAT Arequipa</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-arequipa" name="deuda-arequipa" type="number" min="0" step="0.01"
+                                placeholder="0.00" value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge huancayo">HUANCAYO</span>
+
+                            <label for="deuda-huancayo">SAT Huancayo</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-huancayo" name="deuda-huancayo" type="number" min="0" step="0.01"
+                                placeholder="0.00" value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge andahuaylas">ANDAHUAYLAS</span>
+
+                            <label for="deuda-andahuaylas">SAT Andahuaylas</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-andahuaylas" name="deuda-andahuaylas" type="number" min="0" step="0.01"
+                                placeholder="0.00" value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge ica">ICA</span>
+
+                            <label for="deuda-ica">SAT Ica</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-ica" name="deuda-ica" type="number" min="0" step="0.01" placeholder="0.00"
+                                value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge chachapoyas">CHACHAPOYAS</span>
+
+                            <label for="deuda-chachapoyas">SAT Chachapoyas</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-chachapoyas" name="deuda-chachapoyas" type="number" min="0" step="0.01"
+                                placeholder="0.00" value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge tacna">TACNA</span>
+
+                            <label for="deuda-tacna">SAT Tacna</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-tacna" name="deuda-tacna" type="number" min="0" step="0.01"
+                                placeholder="0.00" value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge chiclayo">CHICLAYO</span>
+
+                            <label for="deuda-chiclayo">SAT Chiclayo</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-chiclayo" name="deuda-chiclayo" type="number" min="0" step="0.01"
+                                placeholder="0.00" value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sat-card">
+
+                        <div class="sat-label-box">
+
+                            <span class="sat-badge piura">PIURA</span>
+
+                            <label for="deuda-piura">SAT Piura</label>
+
+                        </div>
+
+                        <div class="sat-input-box">
+
+                            <span class="currency-symbol">S/</span>
+
+                            <input id="deuda-piura" name="deuda-piura" type="number" min="0" step="0.01"
+                                placeholder="0.00" value="0">
+
+                        </div>
+
+                    </div>
+
+
+
+                </div>
+
+
+
+                <!--*&#x20;Subtotal de deudas SATs&#x20;*-->
+
+                <div class="sat-total-card"
+                    style="margin-top: 15px; padding: 12px 16px; background: rgba(37, 99, 235, 0.1); border: 1px solid #3b82f6; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+
+                    <strong style="font-size: 14px;">Total Deudas Filtro Vehicular (SATs / Entidades):</strong>
+
+                    <span id="satTotalSum" style="font-size: 18px; font-weight: 700; color: #2563eb;">S/ 0.00</span>
+
+                </div>
+
+
+
+                <!--*&#x20;Documentación técnica y legal&#x20;*-->
+
+                <h3
+                    style="margin-top:25px; margin-bottom:15px; font-size:16px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+
+                    Documentación y Verificaciones</h3>
+
+
+
+                <div class="grid">
+
+
+
+                    <div class="field">
+
+                        <label for="revisionEstado">Revisión técnica</label>
+
+                        <select id="revisionEstado" name="revisionEstado">
+
+                            <option value="Vigente">Vigente</option>
+
+                            <option value="Vencida">Vencida</option>
+
+                            <option value="No tiene">No tiene</option>
+
+                            <option value="No corresponde">No corresponde</option>
+
+                            <option value="Por verificar">Por verificar</option>
+
+                        </select>
+
+
+
+                        <div id="revisionCostoContenedor" style="display: none; margin-top:10px;">
+
+                            <label for="revisionCosto">Costo estimado revisión técnica (S/)</label>
+
+                            <input id="revisionCosto" name="revisionCosto" type="number" min="0" step="0.01" value="90">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="field">
+
+                        <label for="soatEstado">SOAT</label>
+
+                        <select id="soatEstado" name="soatEstado">
+
+                            <option value="Vigente">Vigente</option>
+
+                            <option value="Vencido">Vencido</option>
+
+                            <option value="No tiene">No tiene</option>
+
+                            <option value="Por verificar">Por verificar</option>
+
+                        </select>
+
+
+
+                        <div id="soatCostoContenedor" style="display: none; margin-top:10px;">
+
+                            <label for="soatCosto">Costo estimado SOAT (S/)</label>
+
+                            <input id="soatCosto" name="soatCosto" type="number" min="0" step="0.01" value="100">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="field">
+
+                        <label for="catEstado">CAT</label>
+
+                        <select id="catEstado" name="catEstado">
+
+                            <option value="No corresponde">No corresponde</option>
+
+                            <option value="Vigente">Vigente</option>
+
+                            <option value="Vencido">Vencido</option>
+
+                            <option value="No tiene">No tiene</option>
+
+                            <option value="Por verificar">Por verificar</option>
+
+                        </select>
+
+
+
+                        <div id="catCostoContenedor" style="display: none; margin-top:10px;">
+
+                            <label for="catCosto">Costo estimado CAT (S/)</label>
+
+                            <input id="catCosto" name="catCosto" type="number" min="0" step="0.01" value="100">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="field">
+
+                        <label for="gravamenEstado">Gravámenes / Cargas</label>
+
+                        <select id="gravamenEstado" name="gravamenEstado">
+
+                            <option value="Por verificar">Por verificar</option>
+
+                            <option value="Sin gravámenes">Sin gravámenes</option>
+
+                            <option value="Con gravámenes">Con gravámenes</option>
+
+                        </select>
+
+                    </div>
+
+
+
+                </div>
+
+
+
+                <p class="field-help" style="margin-top:15px;">
+
+                    Registra las deudas de cada entidad directamente en soles. Las deudas y los documentos pendientes
+                    aplicables se sumarán automáticamente al total de gastos y al cálculo de rentabilidad.
+
+                </p>
+
+            </section>
+
+
+
+            <!--*&#x20;4. GASTOS&#x20;*-->
+
+            <section class="panel tab-panel" data-tab-panel="gastos">
+                <h2>Gastos del vehículo</h2>
+                <p>Ingresa los gastos que tendrás que asumir. Las deudas y los documentos pendientes se suman
+                    automáticamente desde la pestaña Filtro del vehículo.</p>
+                <div class="grid">
+                    <div class="field"><label for="notary">Gasto en notaría (S/)</label><input id="notary" name="notary"
+                            type="number" min="0" step="0.01" value="0"></div>
+                    <div class="field"><label for="mechanic">Gasto en mecánico (S/)</label><input id="mechanic"
+                            name="mechanic" type="number" min="0" step="0.01" value="0"></div>
+                    <div class="field"><label for="filterCost">Gasto en filtro vehicular (S/)</label><input
+                            id="filterCost" name="filterCost" type="number" min="0" step="0.01" value="0"><small
+                            class="field-help">Costo de realizar la consulta del filtro; las deudas detectadas se suman
+                            aparte.</small></div>
+                    <div class="field"><label for="fuel">Gasto en gasolina (S/)</label><input id="fuel" name="fuel"
+                            type="number" min="0" step="0.01" value="0"></div>
+                    <div class="field"><label for="bodywork">Gasto en planchado (S/)</label><input id="bodywork"
+                            name="bodywork" type="number" min="0" step="0.01" value="0"></div>
+                    <div class="field"><label for="misc">Otros gastos (S/)</label><input id="misc" name="misc"
+                            type="number" min="0" step="0.01" value="0"></div>
+                </div>
+                <div class="expense-total-card" aria-live="polite">
+                    <span>TOTAL DE GASTOS</span>
+                    <strong id="expenseTotalAuto">S/ 0.00</strong>
+                    <small>Incluye los seis gastos anteriores, deudas ingresadas en el filtro y documentos pendientes
+                        aplicables.</small>
+                </div>
                 <div class="field">
                     <label for="notes">Notas de la operación</label>
                     <textarea id="notes" name="notes" rows="4"
                         placeholder="Detalles, observaciones o pendientes..."></textarea>
-                    <small class="field-help">
-                        Añade observaciones, reparaciones pendientes o detalles importantes.
-                    </small>
-                </div>
-
-                <div class="button-group">
-                    <button class="btn btn-primary" type="submit">
-                        Guardar operación
-                    </button>
-
-                    <button class="btn btn-secondary" type="button" id="clear">
-                        Limpiar formulario
-                    </button>
+                    <small class="field-help">Añade observaciones, reparaciones pendientes o detalles
+                        importantes.</small>
                 </div>
             </section>
 
+
+
         </form>
 
-        <!-- 4. RESULTADOS -->
-        <section class="panel">
-            <h2>4. Resultados de la operación</h2>
 
-            <div class="metrics">
 
-                <article class="metric">
-                    <span>Inversión total</span>
-                    <strong id="investment">S/ 0.00</strong>
-                    <small class="field-help">
-                        Precio de compra más todos los gastos registrados.
-                    </small>
-                </article>
+        <nav class="calculator-tabs" aria-label="Secciones de la calculadora">
 
-                <article class="metric">
-                    <span>Total de gastos</span>
-                    <strong id="expenses">S/ 0.00</strong>
-                    <small class="field-help">
-                        Suma de los gastos adicionales del vehículo.
-                    </small>
-                </article>
+            <button type="button" class="calculator-tab active" data-tab="datos" aria-current="step">Datos del
 
-                <article class="metric">
-                    <span>Ganancia estimada</span>
-                    <strong id="profit">S/ 0.00</strong>
-                    <small class="field-help">
-                        Diferencia entre la venta estimada y la inversión total.
-                    </small>
-                </article>
+                vehículo</button>
 
-                <article class="metric">
-                    <span>Rentabilidad (ROI)</span>
-                    <strong id="roi">—</strong>
-                    <small class="field-help">
-                        Porcentaje de ganancia respecto a la inversión.
-                    </small>
-                </article>
+            <button type="button" class="calculator-tab" data-tab="filtro">Filtro del vehículo</button>
 
-                <article class="metric">
-                    <span>Punto de equilibrio</span>
-                    <strong id="breakEven">S/ 0.00</strong>
-                    <small class="field-help">
-                        Precio mínimo de venta para recuperar la inversión registrada.
-                    </small>
-                </article>
+            <button type="button" class="calculator-tab" data-tab="gastos">Calcular rentabilidad</button>
 
-                <article class="metric">
-                    <span>Precio para tu ganancia objetivo</span>
-                    <strong id="targetPrice">S/ 0.00</strong>
-                    <small class="field-help">
-                        Precio necesario para recuperar la inversión y obtener la ganancia deseada.
-                    </small>
-                </article>
+            <button type="button" class="calculator-tab" data-tab="resultado">Resultado final</button>
 
-                <article class="metric">
-                    <span>Ganancia real</span>
-                    <strong id="realProfit">Pendiente</strong>
-                    <small class="field-help">
-                        Ganancia calculada usando el precio final de venta.
-                    </small>
-                </article>
+        </nav>
+
+
+
+        <!--*&#x20;RESULTADO FINAL&#x20;*-->
+
+        <section class="panel tab-panel" data-tab-panel="resultado" hidden>
+
+            <h2>Resultado final</h2>
+
+            <div id="vehicleSummary" class="vehicle-summary"></div>
+
+            <div id="filterSummary" class="summary-block"></div>
+
+            <div id="expenseSummary" class="summary-block"></div>
+
+
+
+            <div class="button-group result-actions">
+
+
+
+                <button class="btn btn-primary" type="submit" form="form" id="saveOperation">
+
+                    Guardar operación
+
+                </button>
+
+                <button class="btn btn-secondary" type="button" id="clear">
+
+                    Limpiar formulario
+
+                </button>
+
+                <button class="btn btn-primary" type="button" id="pdfCurrent">
+
+                    Descargar este resultado (PDF)
+
+                </button>
+
+
+
+
+
+                <button class="btn btn-secondary" type="button" id="goToExpenses">
+
+                    Volver a editar gastos
+
+                </button>
 
             </div>
 
+
+
             <p class="help-text">
+
                 Los resultados son estimaciones basadas en los importes que ingreses.
+
                 Verifica las deudas, multas y condiciones legales por separado.
+
             </p>
+
         </section>
 
-        <!-- 5. HISTORIAL -->
+
+
+        <!--*&#x20;6. HISTORIAL&#x20;*-->
+
         <section class="panel">
-            <h2>5. Historial de operaciones</h2>
+
+            <h2>6. Historial de operaciones</h2>
+
+
 
             <div class="tools">
+
                 <input id="search" type="search" placeholder="Buscar por vehículo o placa..."
                     aria-label="Buscar por vehículo o placa">
 
+
+
                 <button class="btn btn-secondary" type="button" id="pdfSelected">
+
                     Descargar seleccionados (PDF)
+
                 </button>
+
+
 
                 <button class="btn btn-primary" type="button" id="pdfAll">
+
                     Descargar todo (PDF)
+
                 </button>
+
+
 
                 <button class="btn btn-secondary" type="button" id="csv">
+
                     Exportar CSV
+
                 </button>
+
+
 
                 <button class="btn btn-secondary" type="button" id="backup">
+
                     Descargar respaldo JSON
+
                 </button>
+
+
 
                 <button class="btn btn-secondary" type="button" id="import">
+
                     Importar respaldo
+
                 </button>
 
+
+
                 <input id="importFile" type="file" accept="application/json" hidden>
+
             </div>
+
+
 
             <div class="table-wrapper">
+
                 <table>
+
                     <thead>
+
                         <tr>
+
                             <th>Seleccionar</th>
+
                             <th>Vehículo</th>
+
                             <th>Placa</th>
+
                             <th>Compra</th>
+
                             <th>Inversión</th>
+
                             <th>Ganancia estimada</th>
+
                             <th>Acciones</th>
+
                         </tr>
+
                     </thead>
+
                     <tbody id="rows">
+
                         <tr>
+
                             <td colspan="7">Cargando operaciones...</td>
+
                         </tr>
+
                     </tbody>
+
                 </table>
+
             </div>
+
         </section>
 
+
+
         <footer class="site-footer">
+
             <p>Herramientas Vehiculares · Calculadora de reventa</p>
+
             <a href="index.html">← Volver al menú principal</a>
+
         </footer>
+
+
 
     </main>
 
-    <!-- Conexión con Supabase y JavaScript existente -->
+
+
+    <!--*&#x20;Conexión con Supabase y JavaScript existente&#x20;*-->
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <script src="supabase-config.js"></script>
+
     <script src="script.js"></script>
 
-    <!-- Notificación de guardado -->
+
+
+    <!--*&#x20;Notificación de guardado&#x20;*-->
+
     <div id="notificacion" class="notificacion" role="status" aria-live="polite">
+
         <span class="notificacion-icono">✓</span>
+
         <div>
+
             <strong id="notificacionTitulo">¡Operación guardada!</strong>
+
             <p id="notificacionTexto">
+
                 Tu operación se guardó correctamente.
+
             </p>
+
         </div>
+
     </div>
 
-    <!-- Confirmación de eliminación -->
+
+
+    <!--*&#x20;Confirmación de eliminación&#x20;*-->
+
     <div id="modalEliminar" class="modal-confirmacion" role="dialog" aria-modal="true" aria-labelledby="tituloEliminar">
 
+
+
         <div class="modal-contenido">
+
             <div class="modal-icono">🗑️</div>
+
+
 
             <h2 id="tituloEliminar">¿Eliminar operación?</h2>
 
+
+
             <p id="textoEliminar">
+
                 Esta operación se eliminará de tu historial.
+
                 Esta acción no se puede deshacer.
+
             </p>
 
+
+
             <div class="modal-botones">
+
                 <button type="button" id="cancelarEliminar">
+
                     Cancelar
+
                 </button>
+
+
 
                 <button type="button" id="confirmarEliminar">
+
                     Sí, eliminar
+
                 </button>
+
             </div>
+
         </div>
+
     </div>
 
+
+
 </body>
+
+
 
 </html>
