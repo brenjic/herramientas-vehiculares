@@ -301,3 +301,143 @@ footer {
     font-size: 13px;
   }
 }
+
+/* =========================================
+   TARJETA DESTACADA DE ACCESO Y PROMOCIÓN
+   ========================================= */
+
+.solicitar-acceso {
+  position: relative;
+  overflow: hidden;
+  margin-top: 28px;
+  padding: 28px 24px;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 22px;
+  background: linear-gradient(145deg, #ffffff 0%, #eff6ff 55%, #e0e7ff 100%);
+  box-shadow: 0 14px 35px rgba(30, 64, 175, 0.12);
+  text-align: center;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.solicitar-acceso:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 42px rgba(30, 64, 175, 0.17);
+}
+
+.solicitar-acceso::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  background: linear-gradient(90deg, #2563eb, #7c3aed, #06b6d4);
+}
+
+.acceso-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 62px;
+  height: 62px;
+  margin-bottom: 12px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: #fff;
+  font-size: 28px;
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);
+}
+
+.solicitar-acceso h2 {
+  margin: 4px 0 10px;
+  color: #172554;
+  font-size: clamp(21px, 4vw, 27px);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.acceso-descripcion {
+  margin: 0 auto 18px;
+  max-width: 360px;
+  color: #475569;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+#precioAcceso {
+  display: inline-block;
+  margin-left: 4px;
+  color: #1d4ed8;
+  font-size: 25px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+#mensajePromocion {
+  margin: 12px 0;
+  padding: 11px 13px;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  background: #dbeafe;
+  color: #1e40af;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.btn-whatsapp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 54px;
+  box-sizing: border-box;
+  padding: 14px 18px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: #fff !important;
+  font-size: 15px;
+  font-weight: 800;
+  text-decoration: none !important;
+  box-shadow: 0 8px 18px rgba(22, 163, 74, 0.22);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.btn-whatsapp:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(22, 163, 74, 0.3);
+}
+
+.btn-whatsapp:active {
+  transform: scale(0.98);
+}
+
+.whatsapp-icon {
+  font-size: 23px;
+}
+
+.acceso-nota {
+  margin: 13px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+@media (max-width: 480px) {
+  .solicitar-acceso {
+    margin-top: 20px;
+    padding: 24px 17px;
+    border-radius: 18px;
+  }
+
+  .btn-whatsapp {
+    font-size: 14px;
+    padding: 13px 10px;
+  }
+}

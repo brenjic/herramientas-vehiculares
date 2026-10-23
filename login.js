@@ -18,6 +18,94 @@ const mensaje = document.getElementById("mensaje");
 const botonVerContrasena = document.getElementById("btnVerContrasena");
 const enlaceRecuperar = document.getElementById("enlaceRecuperar");
 
+/* ==========================================
+   PRECIO COMPARTIDO DE ACCESO
+   ========================================== */
+
+const precioAcceso = document.getElementById("precioAcceso");
+const avisoPromocion = document.getElementById("mensajePromocion");
+const enlaceWhatsApp = document.getElementById("btnSolicitarAcceso");
+
+let finPromocionCliente = null;
+let consultaPrecioEnCurso = false;
+
+function actualizarVistaPrecio() {
+  if (!precioAcceso || !enlaceWhatsApp) return;
+
+  const promocionActiva =
+    finPromocionCliente !== null && finPromocionCliente > Date.now();
+
+  const precio = promocionActiva ? 15 : 25;
+
+  precioAcceso.textContent = `S/ ${precio}.00`;
+
+  const mensaje = promocionActiva
+    ? "Hola, quiero solicitar acceso a la calculadora vehicular por S/ 15, precio promocional."
+    : "Hola, quiero solicitar acceso a la calculadora vehicular por S/ 25.";
+
+  enlaceWhatsApp.href =
+    "https://wa.me/51976643929?text=" + encodeURIComponent(mensaje);
+
+  if (avisoPromocion) {
+    if (promocionActiva) {
+      const segundos = Math.max(
+        0,
+        Math.ceil((finPromocionCliente - Date.now()) / 1000),
+      );
+
+      const minutos = Math.floor(segundos / 60);
+      const restantes = segundos % 60;
+
+      avisoPromocion.textContent =
+        `¡Oferta en vivo! S/ 15 por tiempo limitado. ` +
+        `Quedan ${String(minutos).padStart(2, "0")}:` +
+        `${String(restantes).padStart(2, "0")}.`;
+    } else {
+      avisoPromocion.textContent = "Precio normal: S/ 25.00.";
+    }
+  }
+}
+
+async function consultarPrecioAcceso() {
+  if (consultaPrecioEnCurso) return;
+  consultaPrecioEnCurso = true;
+
+  try {
+    const { data, error } = await clienteSupabase
+      .from("promociones")
+      .select("activa, termina_en")
+      .eq("id", 1)
+      .single();
+
+    if (error) throw error;
+
+    finPromocionCliente =
+      data.activa && data.termina_en
+        ? new Date(data.termina_en).getTime()
+        : null;
+
+    if (finPromocionCliente <= Date.now()) {
+      finPromocionCliente = null;
+    }
+
+    actualizarVistaPrecio();
+  } catch (error) {
+    console.error("No se pudo consultar el precio:", error);
+
+    // Si falla la consulta, no anunciar una oferta que no se pudo verificar.
+    finPromocionCliente = null;
+    actualizarVistaPrecio();
+  } finally {
+    consultaPrecioEnCurso = false;
+  }
+}
+
+consultarPrecioAcceso();
+
+// Actualiza el contador y consulta los cambios de la promoción.
+setInterval(actualizarVistaPrecio, 1000);
+setInterval(consultarPrecioAcceso, 5000);
+
 // Cambiar entre Cliente y Administrador
 botonesRol.forEach((boton) => {
   boton.addEventListener("click", () => {

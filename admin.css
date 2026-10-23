@@ -733,3 +733,207 @@ footer {
     width: 100%;
   }
 }
+
+/* =========================================
+   PANEL MODERNO DE CONTROL DE PROMOCIONES
+   ========================================= */
+
+#promociones .titulo-seccion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+#promociones .titulo-seccion h2 {
+  margin: 0 0 7px;
+  color: #0f172a;
+  font-size: clamp(22px, 3vw, 29px);
+  font-weight: 850;
+  letter-spacing: -0.6px;
+}
+
+#promociones .titulo-seccion p {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+#promociones .etiqueta {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 13px;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.promocion-panel {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(20px, 4vw, 32px);
+  border: 1px solid #e2e8f0;
+  border-radius: 22px;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 65%, #eff6ff 100%);
+  box-shadow: 0 12px 35px rgba(15, 23, 42, 0.07);
+}
+
+.promocion-panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  background: linear-gradient(90deg, #2563eb, #7c3aed, #06b6d4);
+}
+
+.promocion-precios {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.promocion-precios > div {
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+}
+
+.promocion-precios > div p {
+  margin: 0 0 9px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.promocion-precios > div h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(23px, 4vw, 31px);
+  font-weight: 900;
+  letter-spacing: -0.8px;
+}
+
+.promocion-precios > div:nth-child(2) {
+  border-color: #bbf7d0;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+}
+
+.promocion-precios > div:nth-child(2) h3 {
+  color: #15803d;
+}
+
+.promocion-estado {
+  padding: 25px 20px;
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #eff6ff, #eef2ff);
+  text-align: center;
+}
+
+#estadoPromocion {
+  display: inline-block;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+}
+
+#contadorPromocion {
+  margin: 12px 0;
+  color: #172554;
+  font-size: clamp(42px, 8vw, 62px);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -2px;
+  font-variant-numeric: tabular-nums;
+}
+
+#detallePromocion {
+  margin: 0 auto;
+  max-width: 430px;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.promocion-acciones {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.promocion-acciones button {
+  min-height: 50px;
+  padding: 13px 16px;
+  border: none;
+  border-radius: 13px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+}
+
+#btnActivarPromocion {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: #fff;
+  box-shadow: 0 7px 16px rgba(22, 163, 74, 0.18);
+}
+
+#btnDesactivarPromocion {
+  border: 1px solid #fecaca;
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.promocion-acciones button:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.promocion-acciones button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+#mensajePromocionAdmin {
+  min-height: 20px;
+  margin: 15px 0 0;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+@media (max-width: 560px) {
+  .promocion-precios {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .promocion-precios > div {
+    padding: 17px;
+  }
+
+  .promocion-acciones {
+    grid-template-columns: 1fr;
+  }
+
+  .promocion-estado {
+    padding: 22px 12px;
+  }
+}

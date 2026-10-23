@@ -35,6 +35,7 @@
 
             <nav class="menu">
                 <a href="#inicio" class="activo">▦ &nbsp; Resumen</a>
+                <a href="#promociones">⏱ &nbsp; Promociones</a>
                 <a href="#clientes">👥 &nbsp; Clientes</a>
                 <a href="#nuevo-cliente">＋ &nbsp; Registrar cliente</a>
             </nav>
@@ -84,6 +85,54 @@
                     </div>
                 </article>
 
+            </section>
+
+            <!-- CONTROL DE PROMOCIONES -->
+            <section class="seccion" id="promociones">
+
+                <div class="titulo-seccion">
+                    <div>
+                        <h2>Control de promociones</h2>
+                        <p>Activa o desactiva la oferta durante tus transmisiones en vivo.</p>
+                    </div>
+                    <span class="etiqueta">Precios de acceso</span>
+                </div>
+
+                <div class="promocion-panel">
+
+                    <div class="promocion-precios">
+                        <div>
+                            <p>Precio normal</p>
+                            <h3>S/ 25.00</h3>
+                        </div>
+
+                        <div>
+                            <p>Precio promocional</p>
+                            <h3>S/ 15.00</h3>
+                        </div>
+                    </div>
+
+                    <div class="promocion-estado">
+                        <span id="estadoPromocion">Consultando promoción...</span>
+                        <h2 id="contadorPromocion">--:--</h2>
+                        <p id="detallePromocion">
+                            La promoción está sincronizada con Supabase.
+                        </p>
+                    </div>
+
+                    <div class="promocion-acciones">
+                        <button type="button" id="btnActivarPromocion" class="btn-principal">
+                            Activar oferta por 10 minutos
+                        </button>
+
+                        <button type="button" id="btnDesactivarPromocion" class="btn-secundario">
+                            Desactivar oferta
+                        </button>
+                    </div>
+
+                    <p id="mensajePromocionAdmin" role="status" aria-live="polite"></p>
+
+                </div>
             </section>
 
             <!-- REGISTRAR CLIENTE -->

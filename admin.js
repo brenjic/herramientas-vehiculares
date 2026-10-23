@@ -515,10 +515,206 @@ if (botonCerrarSesion) {
   });
 }
 
+/* ==========================================
+   CONTROL DE PROMOCIONES
+   ========================================== */
+
+const btnActivarPromocion = document.getElementById("btnActivarPromocion");
+const btnDesactivarPromocion = document.getElementById(
+  "btnDesactivarPromocion",
+);
+const estadoPromocion = document.getElementById("estadoPromocion");
+const contadorPromocion = document.getElementById("contadorPromocion");
+const detallePromocion = document.getElementById("detallePromocion");
+const mensajePromocionAdmin = document.getElementById("mensajePromocionAdmin");
+
+let finPromocion = null;
+let temporizadorPromocion = null;
+let guardandoPromocion = false;
+
+function mensajePromo(texto, error = false) {
+  if (!mensajePromocionAdmin) return;
+
+  mensajePromocionAdmin.textContent = texto;
+  mensajePromocionAdmin.style.color = error ? "#dc2626" : "#15803d";
+}
+
+function mostrarEstadoPromo(activa, fin) {
+  finPromocion = activa && fin ? new Date(fin).getTime() : null;
+
+  if (temporizadorPromocion) {
+    clearInterval(temporizadorPromocion);
+    temporizadorPromocion = null;
+  }
+
+  if (activa && finPromocion > Date.now()) {
+    estadoPromocion.textContent = "PROMOCIÓN ACTIVA";
+    detallePromocion.textContent =
+      "Los clientes pueden acceder al precio promocional mientras quede tiempo.";
+
+    actualizarContadorPromo();
+    temporizadorPromocion = setInterval(actualizarContadorPromo, 1000);
+  } else {
+    estadoPromocion.textContent = "PRECIO NORMAL";
+    contadorPromocion.textContent = "00:00";
+    detallePromocion.textContent = "El precio publicado es S/ 25.00.";
+  }
+}
+
+function actualizarContadorPromo() {
+  if (!finPromocion) return;
+
+  const restante = finPromocion - Date.now();
+
+  if (restante <= 0) {
+    mostrarEstadoPromo(false, null);
+    mensajePromo("La promoción terminó. El precio normal es S/ 25.00.");
+
+    // Actualizar el registro para dejarlo inactivo en Supabase.
+    finalizarPromoVencida();
+    return;
+  }
+
+  const segundos = Math.ceil(restante / 1000);
+  const minutos = Math.floor(segundos / 60);
+  const segundosRestantes = segundos % 60;
+
+  contadorPromocion.textContent =
+    String(minutos).padStart(2, "0") +
+    ":" +
+    String(segundosRestantes).padStart(2, "0");
+}
+
+async function cargarPromocion() {
+  const { data, error } = await clienteSupabase
+    .from("promociones")
+    .select("precio_normal, precio_promocional, activa, termina_en")
+    .eq("id", 1)
+    .single();
+
+  if (error) throw error;
+
+  if (
+    data.activa &&
+    data.termina_en &&
+    new Date(data.termina_en).getTime() <= Date.now()
+  ) {
+    await finalizarPromoVencida();
+    return;
+  }
+
+  mostrarEstadoPromo(data.activa, data.termina_en);
+
+  return data;
+}
+
+async function finalizarPromoVencida() {
+  if (guardandoPromocion) return;
+
+  guardandoPromocion = true;
+
+  try {
+    const { error } = await clienteSupabase
+      .from("promociones")
+      .update({
+        activa: false,
+        termina_en: null,
+        actualizada_en: new Date().toISOString(),
+      })
+      .eq("id", 1)
+      .eq("activa", true);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error("No se pudo actualizar el vencimiento:", error);
+  } finally {
+    guardandoPromocion = false;
+  }
+}
+
+async function activarPromocion() {
+  if (guardandoPromocion) return;
+
+  guardandoPromocion = true;
+  btnActivarPromocion.disabled = true;
+  btnDesactivarPromocion.disabled = true;
+
+  try {
+    const fin = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+    const { error } = await clienteSupabase
+      .from("promociones")
+      .update({
+        activa: true,
+        termina_en: fin,
+        actualizada_en: new Date().toISOString(),
+      })
+      .eq("id", 1);
+
+    if (error) throw error;
+
+    await cargarPromocion();
+    mensajePromo("¡Oferta activada! S/ 15.00 durante 10 minutos.");
+  } catch (error) {
+    console.error(error);
+    mensajePromo("No se pudo activar la oferta: " + error.message, true);
+  } finally {
+    guardandoPromocion = false;
+    btnActivarPromocion.disabled = false;
+    btnDesactivarPromocion.disabled = false;
+  }
+}
+
+async function desactivarPromocion() {
+  if (guardandoPromocion) return;
+
+  guardandoPromocion = true;
+  btnActivarPromocion.disabled = true;
+  btnDesactivarPromocion.disabled = true;
+
+  try {
+    const { error } = await clienteSupabase
+      .from("promociones")
+      .update({
+        activa: false,
+        termina_en: null,
+        actualizada_en: new Date().toISOString(),
+      })
+      .eq("id", 1);
+
+    if (error) throw error;
+
+    mostrarEstadoPromo(false, null);
+    mensajePromo("Oferta desactivada. El precio vuelve a S/ 25.00.");
+  } catch (error) {
+    console.error(error);
+    mensajePromo("No se pudo desactivar la oferta: " + error.message, true);
+  } finally {
+    guardandoPromocion = false;
+    btnActivarPromocion.disabled = false;
+    btnDesactivarPromocion.disabled = false;
+  }
+}
+
+if (btnActivarPromocion && btnDesactivarPromocion) {
+  btnActivarPromocion.addEventListener("click", activarPromocion);
+  btnDesactivarPromocion.addEventListener("click", desactivarPromocion);
+}
+
 (async function iniciarPanel() {
   const autorizado = await comprobarAdministrador();
 
   if (autorizado) {
     await cargarClientes();
+
+    try {
+      await cargarPromocion();
+    } catch (error) {
+      console.error("Error al cargar promoción:", error);
+      mensajePromo(
+        "No se pudo cargar la promoción. Revisa la tabla y los permisos de Supabase.",
+        true,
+      );
+    }
   }
 })();
