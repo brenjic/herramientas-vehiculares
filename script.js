@@ -124,6 +124,8 @@
   ];
 
   let currentUser = null;
+  let sessionVersion = null;
+  let sessionCheckInterval = null;
 
   let operations = [];
 
@@ -1913,21 +1915,91 @@
 
       if (!data.session) {
         window.location.replace("login.html");
-
         return;
       }
 
       currentUser = data.session.user;
 
+      // Consultar si la cuenta está activa y obtener la versión de sesión.
+      const { data: perfil, error: errorPerfil } = await supabaseClient
+        .from("perfiles")
+        .select("activo, session_version")
+        .eq("id", currentUser.id)
+        .single();
+
+      if (errorPerfil || !perfil) {
+        console.error("No se pudo verificar el perfil:", errorPerfil);
+        await supabaseClient.auth.signOut();
+        alert("No se pudo verificar tu cuenta. Inicia sesión nuevamente.");
+        window.location.replace("login.html");
+        return;
+      }
+
+      if (perfil.activo !== true) {
+        await supabaseClient.auth.signOut();
+        alert("Tu cuenta está desactivada. Contacta al administrador.");
+        window.location.replace("login.html");
+        return;
+      }
+
+      sessionVersion = perfil.session_version;
+
       await loadOperations();
-
       renderTable();
-
       calculate();
+
+      // Revisar el estado de la cuenta cada 10 segundos.
+      if (sessionCheckInterval !== null) {
+        clearInterval(sessionCheckInterval);
+      }
+
+      sessionCheckInterval = setInterval(() => {
+        checkSessionStatus().catch((error) => {
+          console.error("Error al comprobar la sesión:", error);
+        });
+      }, 10000);
     } catch (error) {
       console.error("Error al iniciar la calculadora:", error);
-
       alert("No se pudo conectar con Supabase. Revisa tu configuración.");
+    }
+  }
+
+  async function checkSessionStatus() {
+    if (!currentUser || sessionVersion === null) return;
+
+    const { data: perfil, error } = await supabaseClient
+      .from("perfiles")
+      .select("activo, session_version")
+      .eq("id", currentUser.id)
+      .single();
+
+    // Si hay un error de conexión, se intentará nuevamente.
+    if (error || !perfil) {
+      console.error("No se pudo verificar el estado de la cuenta:", error);
+      return;
+    }
+
+    const cuentaDesactivada = perfil.activo !== true;
+    const versionCambiada = perfil.session_version !== sessionVersion;
+
+    if (cuentaDesactivada || versionCambiada) {
+      if (sessionCheckInterval !== null) {
+        clearInterval(sessionCheckInterval);
+        sessionCheckInterval = null;
+      }
+
+      currentUser = null;
+      sessionVersion = null;
+
+      await supabaseClient.auth.signOut();
+
+      alert(
+        cuentaDesactivada
+          ? "Tu cuenta ha sido desactivada. Contacta al administrador."
+          : "Tu contraseña ha sido cambiada por el administrador. Inicia sesión nuevamente con tu nueva contraseña.",
+      );
+
+      window.location.replace("login.html");
     }
   }
 
