@@ -1540,3 +1540,9 @@ main.container > .panel ol {
     padding: 20px;
   }
 }
+.icono-herramientas {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  border-radius: 12px;
+}
