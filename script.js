@@ -391,7 +391,10 @@
 
       modelo: String(data.vehicle || "").trim(),
 
-      placa: String(data.plate || "").trim() || null,
+      placa:
+        String(data.plate || "")
+          .trim()
+          .toUpperCase() || null,
 
       anio: Number(data.year) || null,
 
@@ -1006,12 +1009,30 @@
 
     tableBody.replaceChildren();
 
+    const normalizarBusqueda = (texto) =>
+      String(texto || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+
+    const busqueda = normalizarBusqueda(query);
+
     const filtered = operations.filter((operation) => {
-      const vehicle = String(operation.data.vehicle || "").toLowerCase();
+      const data = operation.data;
 
-      const plate = String(operation.data.plate || "").toLowerCase();
+      const camposBusqueda = [
+        data.vehicle,
+        data.plate,
+        data.make,
+        data.version,
+        data.modelYear,
+        data.year,
+      ];
 
-      return vehicle.includes(query) || plate.includes(query);
+      return camposBusqueda.some((campo) =>
+        normalizarBusqueda(campo).includes(busqueda),
+      );
     });
 
     if (!filtered.length) {
@@ -1559,6 +1580,21 @@
   $("year")?.addEventListener("input", actualizarUsoAnual);
 
   $("km")?.addEventListener("input", actualizarUsoAnual);
+
+  // Convertir automáticamente la placa a mayúsculas.
+  const campoPlaca = $("plate");
+
+  if (campoPlaca) {
+    campoPlaca.addEventListener("input", () => {
+      const inicio = campoPlaca.selectionStart;
+      const fin = campoPlaca.selectionEnd;
+
+      campoPlaca.value = campoPlaca.value.toUpperCase();
+
+      // Mantener la posición del cursor mientras escribe.
+      campoPlaca.setSelectionRange(inicio, fin);
+    });
+  }
 
   actualizarModelos();
 
