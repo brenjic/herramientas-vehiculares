@@ -525,10 +525,94 @@
 
   //**&#x20;Genera un único PDF con una o varias operaciones.**
 
-  function exportarOperacionesPDF(lista, nombreArchivo) {
+  async function buscarFotoReferencial(marca, modelo, anio) {
+    try {
+      const consulta = `${marca || ""} ${modelo || ""} ${anio || ""} car`;
+      const parametros = new URLSearchParams({
+        action: "query",
+        generator: "search",
+        gsrsearch: consulta,
+        gsrnamespace: "6",
+        gsrlimit: "10",
+        prop: "imageinfo",
+        iiprop: "url|extmetadata",
+        iiurlwidth: "600",
+        format: "json",
+        origin: "*",
+      });
+
+      const respuesta = await fetch(
+        `https://commons.wikimedia.org/w/api.php?${parametros}`,
+      );
+
+      if (!respuesta.ok) throw new Error("No se pudo buscar la imagen");
+
+      const resultado = await respuesta.json();
+      const paginas = Object.values(resultado.query?.pages || {});
+
+      // Preferir resultados cuyo nombre mencione la marca o el modelo.
+      const textoBuscado = `${marca || ""} ${modelo || ""}`
+        .toLowerCase()
+        .trim();
+
+      const pagina =
+        paginas.find((p) => {
+          const titulo = (p.title || "").toLowerCase();
+          return textoBuscado && titulo.includes(textoBuscado);
+        }) || paginas[0];
+
+      const info = pagina?.imageinfo?.[0];
+      const urlImagen = info?.thumburl || info?.url;
+
+      if (!urlImagen) return null;
+
+      const respuestaImagen = await fetch(urlImagen);
+      if (!respuestaImagen.ok)
+        throw new Error("No se pudo descargar la imagen");
+
+      const blob = await respuestaImagen.blob();
+      const urlTemporal = URL.createObjectURL(blob);
+
+      try {
+        const imagen = new Image();
+
+        await new Promise((resolve, reject) => {
+          imagen.onload = resolve;
+          imagen.onerror = reject;
+          imagen.src = urlTemporal;
+        });
+
+        const canvas = document.createElement("canvas");
+        canvas.width = imagen.naturalWidth;
+        canvas.height = imagen.naturalHeight;
+
+        const contexto = canvas.getContext("2d");
+        contexto.drawImage(imagen, 0, 0);
+
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.88);
+        const metadatos = info.extmetadata || {};
+
+        return {
+          dataUrl,
+          titulo: pagina.title || "Imagen referencial",
+          autor:
+            metadatos.Artist?.value?.replace(/<[^>]*>/g, "").trim() ||
+            "Autor no indicado",
+          licencia: metadatos.LicenseShortName?.value || "Consultar licencia",
+          paginaFuente: info.descriptionurl || urlImagen,
+        };
+      } finally {
+        URL.revokeObjectURL(urlTemporal);
+      }
+    } catch (error) {
+      console.warn("No se pudo cargar la foto referencial:", error);
+      return null;
+    }
+  }
+
+  async function exportarOperacionesPDF(lista, nombreArchivo) {
     if (!lista.length) {
       alert("No hay operaciones para exportar.");
-
       return;
     }
 
@@ -536,24 +620,25 @@
       alert(
         "No se pudo cargar la herramienta para generar PDF. Recarga la página.",
       );
-
       return;
     }
 
     const { jsPDF } = window.jspdf;
-
-    const pdf = new jsPDF();
-
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
     const ancho = pdf.internal.pageSize.getWidth();
-
     const alto = pdf.internal.pageSize.getHeight();
-
-    const margen = 14;
-
+    const margen = 12;
+    const anchoUtil = ancho - margen * 2;
     const vino = [100, 27, 40];
-
-    const gris = [95, 95, 95];
-
+    const vinoClaro = [248, 243, 244];
+    const tinta = [45, 45, 45];
+    const gris = [105, 105, 105];
+    const verde = [34, 112, 74];
+    const rojo = [174, 48, 55];
     let y = 0;
 
     function dinero(valor) {
@@ -561,424 +646,634 @@
         "S/ " +
         (Number(valor) || 0).toLocaleString("es-PE", {
           minimumFractionDigits: 2,
-
           maximumFractionDigits: 2,
         })
       );
     }
 
-    function nuevaPaginaSiHaceFalta(altura = 12) {
-      if (y + altura > alto - 16) {
-        pdf.addPage();
-
-        y = 20;
-      }
+    function texto(valor, alternativo = "No indicado") {
+      const limpio = String(valor ?? "").trim();
+      return limpio || alternativo;
     }
 
-    function encabezadoSeccion(texto) {
-      nuevaPaginaSiHaceFalta(16);
+    function nuevaPagina() {
+      pdf.addPage();
+      y = 18;
+    }
 
+    function asegurarEspacio(altura) {
+      if (y + altura > alto - 17) nuevaPagina();
+    }
+
+    function encabezadoSeccion(titulo) {
+      asegurarEspacio(11);
       pdf.setFillColor(...vino);
-
-      pdf.roundedRect(margen, y - 5, ancho - margen * 2, 9, 2, 2, "F");
-
-      pdf.setTextColor(255, 255, 255);
-
+      pdf.roundedRect(margen, y, anchoUtil, 7, 1.5, 1.5, "F");
       pdf.setFont("helvetica", "bold");
-
-      pdf.setFontSize(10);
-
-      pdf.text(texto, margen + 4, y + 1);
-
-      pdf.setTextColor(40, 40, 40);
-
-      y += 12;
+      pdf.setFontSize(8.5);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text(titulo, margen + 3, y + 4.8);
+      y += 10;
+      pdf.setTextColor(...tinta);
     }
 
-    function fila(etiqueta, valor, destacado = false) {
-      const texto = String(valor ?? "No indicado");
+    function tarjeta(x, top, w, titulo, valor, colorValor = vino) {
+      pdf.setFillColor(...vinoClaro);
+      pdf.roundedRect(x, top, w, 20, 2, 2, "F");
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7);
+      pdf.setTextColor(...gris);
+      pdf.text(titulo, x + 3, top + 5.5);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(9);
+      pdf.setTextColor(...colorValor);
+      const lineas = pdf.splitTextToSize(String(valor), w - 6);
+      pdf.text(lineas.slice(0, 2), x + 3, top + 12);
+      pdf.setTextColor(...tinta);
+    }
 
-      const lineas = pdf.splitTextToSize(texto, ancho - margen * 2 - 65);
+    function filaDoble(etiqueta1, valor1, etiqueta2, valor2, opciones = {}) {
+      const gap = 5;
+      const colW = (anchoUtil - gap) / 2;
+      const x1 = margen;
+      const x2 = margen + colW + gap;
+      const val1 = texto(valor1);
+      const val2 = texto(valor2);
+      const labelW = 27;
+      const valW = colW - labelW - 5;
+      const lines1 = pdf.splitTextToSize(val1, valW);
+      const lines2 = pdf.splitTextToSize(val2, valW);
+      const h = Math.max(7, Math.max(lines1.length, lines2.length) * 3.7 + 3);
+      asegurarEspacio(h);
 
-      const altura = Math.max(7, lineas.length * 5 + 2);
-
-      nuevaPaginaSiHaceFalta(altura);
-
-      if (destacado) {
-        pdf.setFillColor(248, 243, 244);
-
-        pdf.roundedRect(
-          margen,
-
-          y - 4,
-
-          ancho - margen * 2,
-
-          altura,
-
-          1.5,
-
-          1.5,
-
-          "F",
-        );
+      if (opciones.destacado) {
+        pdf.setFillColor(...vinoClaro);
+        pdf.roundedRect(margen, y - 3.5, anchoUtil, h, 1.5, 1.5, "F");
       }
 
+      pdf.setFontSize(7.5);
       pdf.setFont("helvetica", "normal");
-
-      pdf.setFontSize(9);
-
       pdf.setTextColor(...gris);
-
-      pdf.text(etiqueta, margen + 3, y);
-
-      pdf.setFont("helvetica", destacado ? "bold" : "normal");
-
-      pdf.setTextColor(40, 40, 40);
-
-      pdf.text(lineas, margen + 65, y);
-
-      y += altura;
+      pdf.text(String(etiqueta1), x1 + 2, y);
+      pdf.text(String(etiqueta2), x2 + 2, y);
+      pdf.setFont("helvetica", opciones.destacado ? "bold" : "normal");
+      pdf.setTextColor(...(opciones.color || tinta));
+      pdf.text(lines1, x1 + labelW, y);
+      pdf.text(lines2, x2 + labelW, y);
+      y += h;
+      pdf.setTextColor(...tinta);
     }
 
-    function tarjeta(x, titulo, valor, anchoTarjeta) {
-      pdf.setFillColor(248, 243, 244);
-
-      pdf.roundedRect(x, y, anchoTarjeta, 22, 3, 3, "F");
-
+    function filaAncha(etiqueta, valor, opciones = {}) {
+      const textoValor = texto(valor);
+      const labelW = 49;
+      const lines = pdf.splitTextToSize(textoValor, anchoUtil - labelW - 7);
+      const h = Math.max(7, lines.length * 3.8 + 3);
+      asegurarEspacio(h);
+      if (opciones.destacado) {
+        pdf.setFillColor(...vinoClaro);
+        pdf.roundedRect(margen, y - 3.5, anchoUtil, h, 1.5, 1.5, "F");
+      }
+      pdf.setFontSize(7.5);
       pdf.setFont("helvetica", "normal");
-
-      pdf.setFontSize(8);
-
       pdf.setTextColor(...gris);
-
-      pdf.text(titulo, x + 4, y + 7);
-
-      pdf.setFont("helvetica", "bold");
-
-      pdf.setFontSize(10);
-
-      pdf.setTextColor(...vino);
-
-      const valorLineas = pdf.splitTextToSize(String(valor), anchoTarjeta - 8);
-
-      pdf.text(valorLineas, x + 4, y + 15);
+      pdf.text(String(etiqueta), margen + 2, y);
+      pdf.setFont("helvetica", opciones.destacado ? "bold" : "normal");
+      pdf.setTextColor(...(opciones.color || tinta));
+      pdf.text(lines, margen + labelW, y);
+      y += h;
+      pdf.setTextColor(...tinta);
     }
 
-    function tituloVehiculo(texto, numero) {
-      nuevaPaginaSiHaceFalta(24);
+    function filaImporte(etiqueta, importe, opciones = {}) {
+      asegurarEspacio(8);
 
-      pdf.setFillColor(100, 27, 40);
+      if (opciones.destacado) {
+        pdf.setFillColor(...vinoClaro);
+        pdf.roundedRect(margen, y - 3.5, anchoUtil, 7, 1.5, 1.5, "F");
+      }
 
-      pdf.roundedRect(margen, y, ancho - margen * 2, 15, 3, 3, "F");
+      pdf.setFontSize(7.5);
+      pdf.setFont("helvetica", opciones.destacado ? "bold" : "normal");
+      pdf.setTextColor(...(opciones.color || tinta));
 
-      pdf.setFont("helvetica", "bold");
+      pdf.text(String(etiqueta), margen + 2, y);
 
-      pdf.setFontSize(12);
+      pdf.text(dinero(importe), ancho - margen - 2, y, {
+        align: "right",
+      });
 
-      pdf.setTextColor(255, 255, 255);
-
-      pdf.text(`${numero}. ${texto}`, margen + 5, y + 9);
-
-      y += 22;
-
-      pdf.setTextColor(40, 40, 40);
+      y += 7;
+      pdf.setTextColor(...tinta);
     }
 
-    //**&#x20;Portada y encabezado del informe**
+    function cuadricula(items, etiquetaFallback = "No indicado") {
+      const visibles = items.filter(
+        (item) => item && item.valor !== null && item.valor !== undefined,
+      );
+      if (!visibles.length) {
+        filaAncha("Detalle", etiquetaFallback);
+        return;
+      }
+      for (let i = 0; i < visibles.length; i += 2) {
+        const a = visibles[i];
+        const b = visibles[i + 1] || { etiqueta: "", valor: "" };
+        filaDoble(a.etiqueta, a.valor, b.etiqueta, b.valor);
+      }
+    }
 
-    pdf.setFillColor(...vino);
+    function etiquetaGasto(campo) {
+      const etiquetas = {
+        notary: "Notaría",
+        mechanic: "Mecánico",
+        filterCost: "Filtro vehicular",
+        fuel: "Gasolina",
+        bodywork: "Planchado",
+        misc: "Otros",
+        repairs: "Reparaciones",
+        paperwork: "Trámites",
+        cleaning: "Limpieza",
+        storage: "Estacionamiento",
+        sat: "SAT",
+        atu: "ATU",
+        sutran: "SUTRAN",
+        fines: "Multas",
+        liens: "Gravámenes",
+        fees: "Comisiones",
+      };
+      return etiquetas[campo] || campo;
+    }
 
-    pdf.rect(0, 0, ancho, 43, "F");
+    function estadoCorto(valor) {
+      const estado = texto(valor, "Por verificar");
+      return estado.length > 34 ? estado.slice(0, 31) + "..." : estado;
+    }
 
-    pdf.setTextColor(255, 255, 255);
-
-    pdf.setFont("helvetica", "bold");
-
-    pdf.setFontSize(17);
-
-    pdf.text("HERRAMIENTAS VEHICULARES", margen, 17);
-
-    pdf.setFont("helvetica", "normal");
-
-    pdf.setFontSize(10);
-
-    pdf.text("INFORME DE COMPRA Y REVENTA", margen, 26);
-
-    pdf.setFontSize(8);
-
-    pdf.text("Generado: " + new Date().toLocaleString("es-PE"), margen, 35);
-
-    y = 54;
-
-    pdf.setTextColor(40, 40, 40);
-
-    pdf.setFont("helvetica", "bold");
-
-    pdf.setFontSize(13);
-
-    pdf.text("Resumen del reporte", margen, y);
-
-    y += 8;
+    function piePagina() {
+      const total = pdf.internal.getNumberOfPages();
+      for (let pagina = 1; pagina <= total; pagina++) {
+        pdf.setPage(pagina);
+        pdf.setDrawColor(225, 225, 225);
+        pdf.line(margen, alto - 12, ancho - margen, alto - 12);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7);
+        pdf.setTextColor(...gris);
+        pdf.text(
+          "Herramientas Vehiculares · Informe de compra y reventa",
+          margen,
+          alto - 7,
+        );
+        pdf.text(`Página ${pagina} de ${total}`, ancho - margen, alto - 7, {
+          align: "right",
+        });
+      }
+    }
 
     const resultados = lista.map((operacion) => ({
       operacion,
-
-      resultado: calculateForData(operacion.data),
+      resultado: calculateForData(operacion.data || {}),
     }));
-
+    const fotosReferenciales = await Promise.all(
+      resultados.map(({ operacion }) => {
+        const data = operacion.data || {};
+        return buscarFotoReferencial(data.make, data.vehicle, data.year);
+      }),
+    );
     const inversionTotal = resultados.reduce(
-      (suma, item) => suma + item.resultado.investment,
-
+      (s, item) => s + item.resultado.investment,
       0,
     );
-
     const gastosTotal = resultados.reduce(
-      (suma, item) => suma + item.resultado.expenses,
-
+      (s, item) => s + item.resultado.expenses,
       0,
     );
-
     const gananciaTotal = resultados.reduce(
-      (suma, item) => suma + item.resultado.profit,
-
+      (s, item) => s + item.resultado.profit,
       0,
     );
-
     const roiTotal =
-      inversionTotal > 0
-        ? ((gananciaTotal / inversionTotal) * 100).toFixed(2) + "%"
-        : "No disponible";
+      inversionTotal > 0 ? (gananciaTotal / inversionTotal) * 100 : null;
 
-    const espacio = 3;
+    // Portada-resumen, útil tanto para una operación como para un historial.
+    pdf.setFillColor(...vino);
+    pdf.rect(0, 0, ancho, 39, "F");
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(16);
+    pdf.setTextColor(255, 255, 255);
+    pdf.text("HERRAMIENTAS VEHICULARES", margen, 15);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9);
+    pdf.text("INFORME DE COMPRA Y REVENTA", margen, 23);
+    pdf.setFontSize(7.5);
+    pdf.text("Generado: " + new Date().toLocaleString("es-PE"), margen, 31);
+    y = 48;
 
-    const anchoTarjeta = (ancho - margen * 2 - espacio * 3) / 4;
-
-    tarjeta(margen, "OPERACIONES", String(lista.length), anchoTarjeta);
-
-    tarjeta(
-      margen + anchoTarjeta + espacio,
-
-      "INVERSIÓN TOTAL",
-
-      dinero(inversionTotal),
-
-      anchoTarjeta,
-    );
-
-    tarjeta(
-      margen + (anchoTarjeta + espacio) * 2,
-
-      "GASTOS",
-
-      dinero(gastosTotal),
-
-      anchoTarjeta,
-    );
-
-    tarjeta(
-      margen + (anchoTarjeta + espacio) * 3,
-
-      "GANANCIA EST.",
-
-      dinero(gananciaTotal),
-
-      anchoTarjeta,
-    );
-
-    y += 30;
-
-    fila("Rentabilidad global estimada (ROI)", roiTotal, true);
-
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(12);
+    pdf.setTextColor(...tinta);
+    pdf.text("Resumen ejecutivo", margen, y);
     y += 7;
 
-    //**&#x20;Fichas detalladas de cada operación**
+    const gap = 3;
+    const w = (anchoUtil - gap * 3) / 4;
+    tarjeta(margen, y, w, "OPERACIONES", String(lista.length));
+    tarjeta(
+      margen + (w + gap),
+      y,
+      w,
+      "INVERSIÓN TOTAL",
+      dinero(inversionTotal),
+    );
+    tarjeta(
+      margen + 2 * (w + gap),
+      y,
+      w,
+      "GASTOS TOTALES",
+      dinero(gastosTotal),
+    );
+    tarjeta(
+      margen + 3 * (w + gap),
+      y,
+      w,
+      "GANANCIA EST.",
+      dinero(gananciaTotal),
+      gananciaTotal < 0 ? rojo : verde,
+    );
+    y += 25;
+    filaAncha(
+      "Rentabilidad global (ROI)",
+      roiTotal === null ? "No disponible" : roiTotal.toFixed(2) + "%",
+      {
+        destacado: true,
+        color: roiTotal !== null && roiTotal < 0 ? rojo : verde,
+      },
+    );
+    y += 3;
 
     resultados.forEach(({ operacion, resultado }, indice) => {
-      const data = operacion.data;
+      const data = operacion.data || {};
 
+      // La primera operación continúa en la portada.
+      // Las siguientes empiezan en una página nueva.
       if (indice > 0) {
-        pdf.addPage();
+        nuevaPagina();
+      } else {
+        y += 5;
+      }
+      const nombreVehiculo =
+        `${texto(data.make, "")} ${texto(data.vehicle, "Vehículo sin nombre")}`.trim();
+      pdf.setFillColor(...vino);
+      pdf.roundedRect(margen, y, anchoUtil, 13, 2, 2, "F");
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(11);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text(`${indice + 1}. ${nombreVehiculo}`, margen + 4, y + 5.5);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8);
+      pdf.text(
+        `Placa: ${texto(data.plate, "No indicada")}  ·  Estado: ${texto(data.status, "Evaluando")}`,
+        margen + 4,
+        y + 10,
+      );
+      y += 19;
+      pdf.setTextColor(...tinta);
 
-        y = 20;
+      // Ficha visual compacta del vehículo
+      encabezadoSeccion("IDENTIFICACIÓN DEL VEHÍCULO");
+
+      const nombreVehiculoPDF =
+        `${texto(data.make, "")} ${texto(data.vehicle, "Vehículo sin modelo")}`.trim();
+
+      const fotoX = margen;
+      const fotoY = y;
+      const fotoW = 55;
+      const fotoH = 34;
+      const infoX = fotoX + fotoW + 5;
+      const infoW = anchoUtil - fotoW - 5;
+      const fotoReferencial = fotosReferenciales[indice];
+      // Marco para la fotografía
+      pdf.setFillColor(248, 243, 244);
+      pdf.roundedRect(fotoX, fotoY, fotoW, fotoH, 2, 2, "F");
+
+      // Si ya existe una foto en los datos, úsala.
+      // data.vehicleImage debe contener una imagen en formato Data URL.
+      if (fotoReferencial?.dataUrl) {
+        try {
+          pdf.addImage(
+            fotoReferencial.dataUrl,
+            "JPEG",
+            fotoX + 1,
+            fotoY + 1,
+            fotoW - 2,
+            fotoH - 2,
+            undefined,
+            "FAST",
+          );
+        } catch (error) {
+          pdf.setFontSize(7);
+          pdf.setTextColor(...gris);
+          pdf.text("Foto no disponible", fotoX + fotoW / 2, fotoY + 18, {
+            align: "center",
+          });
+        }
+      } else {
+        pdf.setFontSize(7);
+        pdf.setTextColor(...gris);
+        pdf.text("Foto no disponible", fotoX + fotoW / 2, fotoY + 18, {
+          align: "center",
+        });
       }
 
-      tituloVehiculo(
-        `${data.make ? data.make + " " : ""}${data.vehicle || "Vehículo sin nombre"} | Placa: ${data.plate || "No indicada"}`,
-
-        indice + 1,
+      // Datos principales al lado de la foto
+      pdf.setTextColor(...tinta);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(11);
+      pdf.text(
+        pdf.splitTextToSize(nombreVehiculoPDF, infoW).slice(0, 2),
+        infoX,
+        fotoY + 5,
       );
 
-      encabezadoSeccion("01. DATOS DEL VEHÍCULO");
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8);
+      pdf.setTextColor(...gris);
 
-      fila("Marca", data.make || "No indicada");
+      const datosRapidos = [
+        `Placa: ${texto(data.plate, "No indicada")}`,
+        `Año: ${texto(data.year)} · Color: ${texto(data.color)}`,
+        `Kilometraje: ${
+          Number(data.km) > 0
+            ? Number(data.km).toLocaleString("es-PE") + " km"
+            : "No indicado"
+        }`,
+        `Ubicación: ${texto(data.location)}`,
+      ];
 
-      fila("Modelo", data.vehicle || "No indicado");
+      datosRapidos.forEach((linea, i) => {
+        pdf.text(
+          pdf.splitTextToSize(linea, infoW).slice(0, 1),
+          infoX,
+          fotoY + 13 + i * 5,
+        );
+      });
 
-      fila("Versión", data.version || "No indicada");
+      y += fotoH + 4;
 
-      fila("Placa", data.plate || "No indicada");
+      // Cuatro cuadros informativos compactos
+      const cardGap = 2;
+      const infoCardW = (anchoUtil - cardGap * 3) / 4;
+      const infoCardH = 20;
 
-      fila("Año de fabricación", data.year || "No indicado");
+      function miniTarjeta(indice, titulo, valor, simbolo) {
+        const x = margen + indice * (infoCardW + cardGap);
 
-      fila("Año modelo", data.modelYear || "No indicado");
+        pdf.setFillColor(248, 243, 244);
+        pdf.roundedRect(x, y, infoCardW, infoCardH, 1.5, 1.5, "F");
 
-      fila("Color", data.color || "No indicado");
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(10);
+        pdf.setTextColor(...vino);
+        pdf.text(simbolo, x + infoCardW / 2, y + 6, {
+          align: "center",
+        });
 
-      fila("Transmisión", data.transmission || "No indicada");
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(6);
+        pdf.setTextColor(...gris);
+        pdf.text(titulo.toUpperCase(), x + infoCardW / 2, y + 10, {
+          align: "center",
+        });
 
-      fila("Combustible", data.fuelType || "No indicado");
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(6.5);
+        pdf.setTextColor(...tinta);
 
-      fila("Ubicación", data.location || "No indicada");
+        const lineas = pdf.splitTextToSize(String(valor), infoCardW - 3);
+        pdf.text(lineas.slice(0, 2), x + infoCardW / 2, y + 14, {
+          align: "center",
+        });
+      }
 
-      fila(
-        "Kilometraje",
+      miniTarjeta(0, "Marca", texto(data.make), "M");
+      miniTarjeta(1, "Transmisión", texto(data.transmission), "⚙");
+      miniTarjeta(2, "Combustible", texto(data.fuelType), "F");
 
-        data.km
-          ? Number(data.km).toLocaleString("es-PE") + " km"
-          : "No indicado",
+      const kilometraje = Number(data.km) || 0;
+      const anioFabricacion = Number(data.year) || 0;
+      const anioActual = new Date().getFullYear();
+      const antiguedad =
+        anioFabricacion > 0 ? Math.max(1, anioActual - anioFabricacion) : 0;
+      const kmPorAnio =
+        antiguedad > 0 && kilometraje > 0
+          ? Math.round(kilometraje / antiguedad)
+          : null;
+
+      miniTarjeta(
+        3,
+        "Promedio anual",
+        kmPorAnio !== null
+          ? kmPorAnio.toLocaleString("es-PE") + " km/año"
+          : "Sin datos",
+        "KM",
       );
 
-      fila("Estado", data.status || "No indicado");
+      y += infoCardH + 5;
 
-      encabezadoSeccion("02. PRECIOS");
-
-      fila("Precio publicado por el vendedor", dinero(data.sellerAsk));
-
-      fila("Tu oferta", dinero(data.buy));
-
-      fila(
-        "Precio de mercado según Filtro Vehicular",
-        dinero(data.marketFiltro),
-      );
-      fila(
-        "Precio de mercado según Marketplace",
-        dinero(data.marketMarketplace),
-      );
-      fila(
-        "Precio de mercado promedio",
-        resultado.marketAverage > 0
-          ? dinero(resultado.marketAverage)
-          : "No indicado",
-        true,
-      );
-
-      fila(
-        "GASTO TOTAL (oferta + gastos + filtro)",
-        dinero(resultado.investment),
-        true,
-      );
-      fila(
-        "Ganancia estimada según mercado",
-        resultado.marketAverage > 0 ? dinero(resultado.profit) : "No calculada",
-        true,
-      );
-
-      fila(
-        "Precio de venta real",
-
-        Number(data.real) > 0 ? dinero(data.real) : "Pendiente",
-      );
-
-      encabezadoSeccion("03. DOCUMENTACIÓN Y SEGUROS");
-
-      fila("Estado SOAT", data.soatEstado || "No indicado");
-
-      fila("Costo SOAT considerado", dinero(resultado.docs.soatCosto));
-
-      fila("Estado CAT", data.catEstado || "No indicado");
-
-      fila("Costo CAT considerado", dinero(resultado.docs.catCosto));
-
-      fila("Revisión técnica", data.revisionEstado || "No indicada");
-
-      fila(
-        "Costo de revisión considerado",
-
-        dinero(resultado.docs.revisionCosto),
-      );
-
-      fila("Multas / papeletas", data.multasEstado || "Por verificar");
-
-      fila("Gravámenes / cargas", data.gravamenEstado || "Por verificar");
-
-      fila("Consulta SAT", data.satEstado || "Por verificar");
-
-      fila("Consulta ATU", data.atuEstado || "Por verificar");
-
-      fila("Consulta SUTRAN", data.sutranEstado || "Por verificar");
-
-      encabezadoSeccion("04. DESGLOSE DE GASTOS");
-
-      expenseFields.forEach((campo) => fila(campo, dinero(data[campo])));
-
-      encabezadoSeccion("05. RESULTADO FINANCIERO");
-
-      fila("Total de gastos y deudas", dinero(resultado.expenses));
-      fila(
-        "Total de deudas ingresadas en el filtro",
-        dinero(resultado.filterDebts),
-      );
-
-      fila("Inversión total", dinero(resultado.investment), true);
-
-      fila("Punto de equilibrio", dinero(resultado.investment));
-
-      fila("Ganancia estimada", dinero(resultado.profit), true);
-
-      fila(
-        "Rentabilidad (ROI)",
-
-        resultado.investment > 0
-          ? resultado.roi.toFixed(2) + "%"
-          : "No disponible",
-      );
-
-      fila(
-        "Ganancia real",
-
-        resultado.actualProfit !== null
-          ? dinero(resultado.actualProfit)
-          : "Pendiente",
-      );
+      // Datos complementarios, sin volver a repetir los datos principales
+      cuadricula([
+        { etiqueta: "Versión", valor: data.version },
+        { etiqueta: "Año modelo", valor: data.modelYear },
+      ]);
 
       if (data.notes) {
-        encabezadoSeccion("06. OBSERVACIONES");
+        encabezadoSeccion("OBSERVACIONES");
+        filaAncha("Notas", data.notes);
+      }
 
-        fila("Notas", data.notes);
+      // =========================================
+      // DESGLOSE DETALLADO DE GASTOS Y DEUDAS
+      // =========================================
+
+      encabezadoSeccion("1. DESGLOSE DE GASTOS DEL VEHÍCULO");
+
+      const etiquetasGastosPDF = {
+        notary: "Notaría",
+        mechanic: "Mecánico",
+        filterCost: "Filtro vehicular",
+        fuel: "Gasolina",
+        bodywork: "Planchado",
+        misc: "Otros gastos",
+        repairs: "Reparaciones",
+        paperwork: "Trámites",
+        cleaning: "Limpieza",
+        storage: "Estacionamiento",
+        sat: "Otros gastos SAT",
+        atu: "Otros gastos ATU",
+        sutran: "Otros gastos SUTRAN",
+        fines: "Multas registradas como gasto",
+        liens: "Gravámenes registrados como gasto",
+        fees: "Comisiones",
+      };
+
+      for (const campo of expenseFields) {
+        filaImporte(
+          etiquetasGastosPDF[campo] || campo,
+          Math.max(0, Number(data[campo]) || 0),
+        );
+      }
+
+      filaImporte("SUBTOTAL DE GASTOS REGISTRADOS", resultado.regularExpenses, {
+        destacado: true,
+      });
+
+      y += 3;
+
+      // =========================================
+      // DEUDAS POR ENTIDAD DEL FILTRO VEHICULAR
+      // =========================================
+
+      encabezadoSeccion("2. DEUDAS DEL FILTRO VEHICULAR");
+
+      const etiquetasDeudasPDF = {
+        "deuda-sat-lima": "SAT Lima",
+        "deuda-sutran": "SUTRAN",
+        "deuda-callao": "Municipalidad del Callao",
+        "deuda-atu": "ATU",
+        "deuda-infogas": "Infogas",
+        "deuda-cuzco": "Entidad de Cusco",
+        "deuda-pucallpa": "Entidad de Pucallpa",
+        "deuda-huanuco": "Entidad de Huánuco",
+        "deuda-tarapoto": "Entidad de Tarapoto",
+        "deuda-trujillo": "Entidad de Trujillo",
+        "deuda-cajamarca": "Entidad de Cajamarca",
+        "deuda-arequipa": "Entidad de Arequipa",
+        "deuda-huancayo": "Entidad de Huancayo",
+        "deuda-andahuaylas": "Entidad de Andahuaylas",
+        "deuda-ica": "Entidad de Ica",
+        "deuda-chachapoyas": "Entidad de Chachapoyas",
+        "deuda-tacna": "Entidad de Tacna",
+        "deuda-chiclayo": "Entidad de Chiclayo",
+        "deuda-piura": "Entidad de Piura",
+      };
+
+      for (const campo of filterDebtFields) {
+        filaImporte(
+          etiquetasDeudasPDF[campo] || campo,
+          Math.max(0, Number(data[campo]) || 0),
+        );
+      }
+
+      filaImporte("TOTAL DE DEUDAS POR ENTIDAD", resultado.filterDebts, {
+        destacado: true,
+      });
+
+      y += 3;
+
+      // =========================================
+      // DOCUMENTOS Y COSTOS PENDIENTES
+      // =========================================
+
+      encabezadoSeccion("3. DOCUMENTOS DEL VEHÍCULO");
+
+      const documentosPDF = [
+        {
+          nombre: "SOAT",
+          estado: data.soatEstado,
+          costo: data.soatCosto,
+          incluido: resultado.docs.soatCosto,
+        },
+        {
+          nombre: "CAT",
+          estado: data.catEstado,
+          costo: data.catCosto,
+          incluido: resultado.docs.catCosto,
+        },
+        {
+          nombre: "Revisión técnica",
+          estado: data.revisionEstado,
+          costo: data.revisionCosto,
+          incluido: resultado.docs.revisionCosto,
+        },
+      ];
+
+      for (const documento of documentosPDF) {
+        filaAncha(
+          documento.nombre,
+          `Estado: ${texto(documento.estado, "Por verificar")}`,
+        );
+
+        filaDoble(
+          "Costo registrado",
+          dinero(documento.costo),
+          "Costo incluido",
+          dinero(documento.incluido),
+        );
+      }
+
+      filaImporte("TOTAL DE DOCUMENTOS INCLUIDOS", resultado.documentTotal, {
+        destacado: true,
+      });
+
+      y += 3;
+
+      // =========================================
+      // RESUMEN ECONÓMICO FINAL
+      // =========================================
+
+      encabezadoSeccion("4. RESUMEN DE COMPRA Y REVENTA");
+
+      filaImporte("Precio anunciado por el vendedor", data.sellerAsk);
+
+      filaImporte("Precio de compra u oferta", data.buy);
+
+      filaImporte("Subtotal de gastos registrados", resultado.regularExpenses);
+
+      filaImporte("Total de deudas por entidad", resultado.filterDebts);
+
+      filaImporte("Total de documentos incluidos", resultado.documentTotal);
+
+      filaImporte("TOTAL DE GASTOS Y DEUDAS", resultado.expenses, {
+        destacado: true,
+      });
+
+      filaImporte("INVERSIÓN TOTAL", resultado.investment, { destacado: true });
+
+      filaImporte("Precio de venta estimado", resultado.estimatedSale);
+
+      filaImporte("GANANCIA ESTIMADA", resultado.profit, {
+        destacado: true,
+        color: resultado.profit < 0 ? rojo : verde,
+      });
+
+      filaImporte(
+        "RENTABILIDAD (ROI)",
+        resultado.estimatedSale > 0 && resultado.investment > 0
+          ? resultado.roi
+          : 0,
+        {
+          destacado: true,
+          color: resultado.roi < 0 ? rojo : verde,
+        },
+      );
+
+      if (!(resultado.estimatedSale > 0 && resultado.investment > 0)) {
+        filaAncha(
+          "Nota sobre el ROI",
+          "No disponible: ingresa un precio de venta estimado y una inversión mayor que cero.",
+        );
+      }
+
+      if (Number(data.real) > 0) {
+        filaImporte("Precio de venta real registrado", data.real);
+
+        filaImporte("GANANCIA CON PRECIO REAL", resultado.actualProfit, {
+          destacado: true,
+          color: resultado.actualProfit < 0 ? rojo : verde,
+        });
       }
     });
 
-    //**&#x20;Numeración de páginas**
-
-    const totalPaginas = pdf.internal.getNumberOfPages();
-
-    for (let pagina = 1; pagina <= totalPaginas; pagina++) {
-      pdf.setPage(pagina);
-
-      pdf.setDrawColor(220, 220, 220);
-
-      pdf.line(margen, alto - 12, ancho - margen, alto - 12);
-
-      pdf.setFont("helvetica", "normal");
-
-      pdf.setFontSize(8);
-
-      pdf.setTextColor(120, 120, 120);
-
-      pdf.text("Herramientas Vehiculares", margen, alto - 7);
-
-      pdf.text(
-        `Página ${pagina} de ${totalPaginas}`,
-
-        ancho - margen,
-
-        alto - 7,
-
-        { align: "right" },
-      );
-    }
-
+    piePagina();
     pdf.save(nombreArchivo);
   }
 
@@ -1521,7 +1816,7 @@
 
   <div class="summary-grid">
 
-    ${item("Deuda total", deudaTotal)}
+${item("Total filtro vehicular (deudas + documentos)", deudaTotal)}
 
     ${item("Propietarios anteriores", data.duenosAnteriores)}
 
@@ -1544,8 +1839,16 @@
     ${item("Precio Filtro Vehicular", money(data.marketFiltro))}
     ${item("Precio Marketplace", money(data.marketMarketplace))}
     ${item("Precio de mercado promedio", result.marketAverage > 0 ? money(result.marketAverage) : "Ingresa ambos precios")}
-    ${item("Ganancia estimada", result.marketAverage > 0 ? money(result.profit) : "—")}
-    ${item("Rentabilidad (ROI)", result.marketAverage > 0 && result.investment > 0 ? result.roi.toFixed(2) + "%" : "—")}
+${item(
+  "Ganancia estimada",
+  result.estimatedSale > 0 ? money(result.profit) : "—",
+)}
+${item(
+  "Rentabilidad (ROI)",
+  result.estimatedSale > 0 && result.investment > 0
+    ? result.roi.toFixed(2) + "%"
+    : "—",
+)}
     ${item("Precio de venta real", Number(data.real) > 0 ? money(data.real) : "Pendiente")}
   </div>`;
   }
@@ -2097,69 +2400,59 @@ const satInputIds = [
 ];
 
 function actualizarTotalSat() {
-  let sumaSat = 0;
+  const leerNumero = (id) => {
+    const campo = document.getElementById(id);
+    if (!campo) return 0;
 
-  //*&#x20;Sumar deudas de SAT y demás entidades.*
+    // Acepta números enteros y decimales.
+    const valor = campo.value.trim().replace(",", ".");
+    if (valor === "") return 0;
 
-  satInputIds.forEach((id) => {
-    const el = document.getElementById(id);
+    const numero = Number(valor);
+    return Number.isFinite(numero) ? Math.max(0, numero) : 0;
+  };
 
-    if (el) {
-      sumaSat += Math.max(0, Number(el.value) || 0);
+  const leerEstado = (id) => (document.getElementById(id)?.value || "").trim();
+
+  const debeIncluirCosto = (estado) =>
+    ["Vencido", "Vencida", "No tiene"].includes(estado);
+
+  const sumaDeudas = satInputIds.reduce(
+    (total, id) => total + leerNumero(id),
+    0,
+  );
+
+  let costoSoat = debeIncluirCosto(leerEstado("soatEstado"))
+    ? leerNumero("soatCosto")
+    : 0;
+
+  let costoCat = debeIncluirCosto(leerEstado("catEstado"))
+    ? leerNumero("catCosto")
+    : 0;
+
+  const costoRevision = debeIncluirCosto(leerEstado("revisionEstado"))
+    ? leerNumero("revisionCosto")
+    : 0;
+
+  // Evitar sumar SOAT y CAT al mismo tiempo:
+  // se conserva el costo mayor si ambos aplican.
+  if (costoSoat > 0 && costoCat > 0) {
+    if (costoSoat >= costoCat) {
+      costoCat = 0;
+    } else {
+      costoSoat = 0;
     }
-  });
+  }
 
-  // Documentos pendientes: aplicar las mismas reglas que usa el cálculo de rentabilidad.
-  const estadoRevision = document.getElementById("revisionEstado")?.value;
-  const costoRevision = Math.max(
-    0,
-    Number(document.getElementById("revisionCosto")?.value) || 0,
-  );
-  if (["Vencida", "No tiene"].includes(estadoRevision))
-    sumaSat += costoRevision;
-
-  const estadoSoat = document.getElementById("soatEstado")?.value;
-  const costoSoat = Math.max(
-    0,
-    Number(document.getElementById("soatCosto")?.value) || 0,
-  );
-  const soatAplicable = ["Vencido", "No tiene"].includes(estadoSoat)
-    ? costoSoat
-    : 0;
-
-  const estadoCat = document.getElementById("catEstado")?.value;
-  const costoCat = Math.max(
-    0,
-    Number(document.getElementById("catCosto")?.value) || 0,
-  );
-  const catAplicable = ["Vencido", "No tiene"].includes(estadoCat)
-    ? costoCat
-    : 0;
-  // Si aparecen SOAT y CAT al mismo tiempo, cuenta solo el costo mayor para evitar duplicarlos.
-  sumaSat +=
-    soatAplicable > 0 && catAplicable > 0
-      ? Math.max(soatAplicable, catAplicable)
-      : soatAplicable + catAplicable;
-
-  //*&#x20;Actualizar el total visible.*
+  const totalFiltro = sumaDeudas + costoSoat + costoCat + costoRevision;
 
   const totalDisplay = document.getElementById("satTotalSum");
 
   if (totalDisplay) {
-    totalDisplay.textContent = `S/ ${sumaSat.toLocaleString("es-PE", {
+    totalDisplay.textContent = `S/ ${totalFiltro.toLocaleString("es-PE", {
       minimumFractionDigits: 2,
-
       maximumFractionDigits: 2,
     })}`;
-  }
-
-  //*&#x20;Actualizar el resumen del filtro si corresponde.*
-
-  if (
-    !document.querySelector('[data-tab-panel="resultado"]')?.hidden &&
-    typeof renderVehicleSummary === "function"
-  ) {
-    renderVehicleSummary();
   }
 }
 
@@ -2218,159 +2511,3 @@ document.addEventListener("DOMContentLoaded", actualizarTotalSat);
 window.addEventListener("load", actualizarTotalSat);
 
 setTimeout(actualizarTotalSat, 300);
-
-/* ==========================================
-   SUMA AUTOMÁTICA DE DEUDAS Y GASTOS
-   ========================================== */
-
-function actualizarTotalesVehiculares() {
-  const obtenerValor = (id) => {
-    const elemento = document.getElementById(id);
-    if (!elemento) return 0;
-
-    const valor = Number(elemento.value);
-    return Number.isFinite(valor) && valor > 0 ? valor : 0;
-  };
-
-  const soles = (valor) =>
-    "S/ " +
-    valor.toLocaleString("es-PE", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-
-  // 1. Sumar automáticamente todas las deudas por entidad.
-  const camposDeuda = document.querySelectorAll(
-    ".sat-card input[type='number']",
-  );
-
-  let totalDeudas = 0;
-
-  camposDeuda.forEach((campo) => {
-    const valor = Number(campo.value);
-    if (Number.isFinite(valor) && valor > 0) {
-      totalDeudas += valor;
-    }
-  });
-
-  const vistaDeudas = document.getElementById("satTotalSum");
-  if (vistaDeudas) {
-    vistaDeudas.textContent = soles(totalDeudas);
-  }
-
-  // 2. Sumar los seis gastos de la operación.
-  const gastos = [
-    "notary",
-    "mechanic",
-    "filterCost",
-    "fuel",
-    "bodywork",
-    "misc",
-  ];
-
-  let totalGastos = 0;
-
-  gastos.forEach((id) => {
-    totalGastos += obtenerValor(id);
-  });
-
-  // 3. Agregar costos de documentos pendientes aplicables.
-  const documentosPendientes = [
-    {
-      estado: "revisionEstado",
-      costo: "revisionCosto",
-      pendientes: ["Vencida", "No tiene"],
-    },
-    {
-      estado: "soatEstado",
-      costo: "soatCosto",
-      pendientes: ["Vencido", "No tiene"],
-    },
-    {
-      estado: "catEstado",
-      costo: "catCosto",
-      pendientes: ["Vencido", "No tiene"],
-    },
-  ];
-
-  documentosPendientes.forEach((documento) => {
-    const estado = document.getElementById(documento.estado);
-    const contenedor = document.getElementById(documento.costo + "Contenedor");
-
-    if (estado && contenedor && documento.pendientes.includes(estado.value)) {
-      totalGastos += obtenerValor(documento.costo);
-    }
-  });
-
-  // 4. Total general de gastos: incluye las deudas una sola vez.
-  totalGastos += totalDeudas;
-
-  const vistaGastos = document.getElementById("expenseTotalAuto");
-  if (vistaGastos) {
-    vistaGastos.textContent = soles(totalGastos);
-  }
-
-  // 5. Gasto total: oferta de compra + todos los gastos.
-  const oferta = obtenerValor("buy");
-  const gastoTotal = oferta + totalGastos;
-
-  const vistaTotal = document.getElementById("gastoTotalVista");
-  if (vistaTotal) {
-    vistaTotal.textContent = soles(gastoTotal);
-  }
-
-  // Actualizar resultados estimados de rentabilidad.
-  const mercadoFiltro = obtenerValor("marketFiltro");
-  const mercadoMarketplace = obtenerValor("marketMarketplace");
-
-  const preciosMercado = [mercadoFiltro, mercadoMarketplace].filter(
-    (precio) => precio > 0,
-  );
-
-  const promedio = preciosMercado.length
-    ? preciosMercado.reduce((suma, precio) => suma + precio, 0) /
-      preciosMercado.length
-    : 0;
-
-  const vistaPromedio = document.getElementById("marketAverageDisplay");
-  if (vistaPromedio) {
-    vistaPromedio.textContent =
-      preciosMercado.length === 2
-        ? soles(promedio)
-        : preciosMercado.length === 1
-          ? soles(promedio) + " (precio disponible)"
-          : "Ingresa al menos un precio";
-  }
-
-  const precioReal = obtenerValor("real");
-  const precioUsado = precioReal > 0 ? precioReal : promedio;
-  const gananciaEstimada = precioUsado - gastoTotal;
-  const vistaGanancia = document.getElementById("rentabilidadMonto");
-
-  if (vistaGanancia) {
-    vistaGanancia.textContent = soles(gananciaEstimada);
-  }
-
-  const vistaROI = document.getElementById("rentabilidadPorcentaje");
-
-  if (vistaROI) {
-    vistaROI.textContent =
-      gastoTotal > 0
-        ? ((gananciaEstimada / gastoTotal) * 100).toLocaleString("es-PE", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          }) + "%"
-        : "—";
-  }
-}
-
-// Recalcular al escribir, seleccionar o modificar un importe.
-const formularioVehicular = document.getElementById("form");
-
-if (formularioVehicular) {
-  formularioVehicular.addEventListener("input", actualizarTotalesVehiculares);
-  formularioVehicular.addEventListener("change", actualizarTotalesVehiculares);
-}
-
-// Calcular los totales también al abrir la calculadora.
-actualizarTotalesVehiculares();
