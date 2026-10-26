@@ -527,13 +527,14 @@
 
   async function buscarFotoReferencial(marca, modelo, anio) {
     try {
-      const consulta = `${marca || ""} ${modelo || ""} ${anio || ""} car`;
+      // Consulta limpia y directa sin términos ambiguos
+      const consulta = `${marca || ""} ${modelo || ""} ${anio || ""} automobile`;
       const parametros = new URLSearchParams({
         action: "query",
         generator: "search",
         gsrsearch: consulta,
         gsrnamespace: "6",
-        gsrlimit: "10",
+        gsrlimit: "15", // Pedimos un poco más de opciones para filtrar
         prop: "imageinfo",
         iiprop: "url|extmetadata",
         iiurlwidth: "600",
@@ -550,18 +551,28 @@
       const resultado = await respuesta.json();
       const paginas = Object.values(resultado.query?.pages || {});
 
-      // Preferir resultados cuyo nombre mencione la marca o el modelo.
       const textoBuscado = `${marca || ""} ${modelo || ""}`
         .toLowerCase()
         .trim();
 
-      const pagina =
+      // Filtro estricto: Buscamos una página cuyo título mencione la marca o modelo
+      // Y descartamos cualquier cosa que contenga palabras no deseadas (aviones, etc.)
+      const paginaValida =
         paginas.find((p) => {
           const titulo = (p.title || "").toLowerCase();
-          return textoBuscado && titulo.includes(textoBuscado);
-        }) || paginas[0];
 
-      const info = pagina?.imageinfo?.[0];
+          // Palabras prohibidas por si acaso aparece algo extraño
+          const esBasura =
+            titulo.includes("airplane") ||
+            titulo.includes("station") ||
+            titulo.includes("map");
+
+          const coincideModelo = textoBuscado && titulo.includes(textoBuscado);
+
+          return coincideModelo && !esBasura;
+        }) || paginas[0]; // Si no halla coincidencia exacta, toma el primer resultado seguro
+
+      const info = paginaValida?.imageinfo?.[0];
       const urlImagen = info?.thumburl || info?.url;
 
       if (!urlImagen) return null;
@@ -594,7 +605,7 @@
 
         return {
           dataUrl,
-          titulo: pagina.title || "Imagen referencial",
+          titulo: paginaValida.title || "Imagen referencial",
           autor:
             metadatos.Artist?.value?.replace(/<[^>]*>/g, "").trim() ||
             "Autor no indicado",
@@ -609,7 +620,6 @@
       return null;
     }
   }
-
   async function exportarOperacionesPDF(lista, nombreArchivo) {
     if (!lista.length) {
       alert("No hay operaciones para exportar.");
@@ -766,7 +776,27 @@
       y += 7;
       pdf.setTextColor(...tinta);
     }
+    function filaDerecha(etiqueta, valorTexto, opciones = {}) {
+      asegurarEspacio(8);
 
+      if (opciones.destacado) {
+        pdf.setFillColor(...vinoClaro);
+        pdf.roundedRect(margen, y - 3.5, anchoUtil, 7, 1.5, 1.5, "F");
+      }
+
+      pdf.setFontSize(7.5);
+      pdf.setFont("helvetica", opciones.destacado ? "bold" : "normal");
+      pdf.setTextColor(...(opciones.color || tinta));
+
+      pdf.text(String(etiqueta), margen + 2, y);
+
+      pdf.text(String(valorTexto), ancho - margen - 2, y, {
+        align: "right",
+      });
+
+      y += 7;
+      pdf.setTextColor(...tinta);
+    }
     function cuadricula(items, etiquetaFallback = "No indicado") {
       const visibles = items.filter(
         (item) => item && item.valor !== null && item.valor !== undefined,
@@ -1245,11 +1275,11 @@
         color: resultado.profit < 0 ? rojo : verde,
       });
 
-      filaImporte(
+      filaDerecha(
         "RENTABILIDAD (ROI)",
         resultado.estimatedSale > 0 && resultado.investment > 0
-          ? resultado.roi
-          : 0,
+          ? `${resultado.roi.toFixed(2)}%`
+          : "—",
         {
           destacado: true,
           color: resultado.roi < 0 ? rojo : verde,
